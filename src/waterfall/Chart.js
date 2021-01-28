@@ -1337,6 +1337,7 @@ anychart.waterfallModule.Chart.prototype.disposeInternal = function() {
   proto['getYScales'] = proto.getYScales;
   proto['data'] = proto.data;
   proto['connectors'] = proto.connectors;
+  proto['addArrow'] = proto.addArrow;
   // deprecated
   proto['connectorStroke'] = proto.connectorStroke;
 })();
