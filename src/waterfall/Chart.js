@@ -6,6 +6,7 @@ goog.require('anychart.core.shapeManagers');
 goog.require('anychart.core.ui.LabelsFactory');
 goog.require('anychart.enums');
 goog.require('anychart.format.Context');
+goog.require('anychart.waterfallModule.ArrowsManager');
 goog.require('anychart.waterfallModule.Connectors');
 goog.require('anychart.waterfallModule.Series');
 
@@ -193,6 +194,15 @@ anychart.waterfallModule.Chart.prototype.drawContent = function(contentBounds) {
   anychart.waterfallModule.Chart.base(this, 'drawContent', contentBounds);
 
   this.drawLabels();
+  
+  this.arrows_().draw();
+};
+
+
+/** @inheritDoc */
+anychart.waterfallModule.Chart.prototype.specialDraw = function(contentBounds) {
+  anychart.waterfallModule.Chart.base(this, 'specialDraw', contentBounds);
+
 };
 
 
@@ -1218,6 +1228,18 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
 };
 
 
+//endregion
+//region --- Arrows
+anychart.waterfallModule.Chart.prototype.arrows_ = function() {
+  if (!goog.isDef(this.arrowsManager_)) {
+    this.arrowsManager_ = new anychart.waterfallModule.ArrowsManager(this);
+  }
+  return this.arrowsManager_;
+}
+
+anychart.waterfallModule.Chart.prototype.addArrow = function(options) {
+  return this.arrows_().addArrow(options);
+}
 //endregion
 //region --- setup/dispose
 /** @inheritDoc */
