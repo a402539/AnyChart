@@ -195,7 +195,7 @@ anychart.waterfallModule.Chart.prototype.drawContent = function(contentBounds) {
 
   this.drawLabels();
   
-  this.arrows_().draw();
+  this.arrows().draw();
 };
 
 
@@ -1230,15 +1230,16 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
 
 //endregion
 //region --- Arrows
-anychart.waterfallModule.Chart.prototype.arrows_ = function() {
+anychart.waterfallModule.Chart.prototype.arrows = function() {
   if (!goog.isDef(this.arrowsManager_)) {
     this.arrowsManager_ = new anychart.waterfallModule.ArrowsManager(this);
   }
   return this.arrowsManager_;
 }
 
+
 anychart.waterfallModule.Chart.prototype.addArrow = function(options) {
-  return this.arrows_().addArrow(options);
+  return this.arrows().addArrow(options);
 }
 //endregion
 //region --- setup/dispose

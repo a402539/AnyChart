@@ -103,6 +103,7 @@ anychart.waterfallModule.ArrowsManager.prototype.calculateArrows_ = function() {
 
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
+    var settings = {};
 
     var stacksBounds = this.getArrowStackBounds_(arrow);
 
