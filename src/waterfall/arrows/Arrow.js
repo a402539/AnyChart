@@ -1,10 +1,12 @@
 goog.provide('anychart.waterfallModule.Arrow');
 
+goog.require('anychart.core.ui.LabelsSettings');
+goog.require('anychart.core.ui.OptimizedText');
 
 /**
  * Arrow 
  * @constructor
- * @extends {anychart.core.Base}
+ * @extends {anychart.core.VisualBase}
  */
 anychart.waterfallModule.Arrow = function() {
   anychart.waterfallModule.Arrow.base(this, 'constructor');
@@ -18,7 +20,7 @@ anychart.waterfallModule.Arrow = function() {
     ]
 );
 };
-goog.inherits(anychart.waterfallModule.Arrow, anychart.core.Base);
+goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
 
 
 /**
@@ -41,6 +43,15 @@ anychart.core.settings.populate(anychart.waterfallModule.Arrow, anychart.waterfa
 
 
 /**
+ * Supported consistency states.
+ * @type {number}
+ */
+anychart.waterfallModule.Arrow.prototype.SUPPORTED_CONSISTENCY_STATES =
+    anychart.core.VisualBase.prototype.SUPPORTED_CONSISTENCY_STATES |
+    anychart.ConsistencyState.APPEARANCE;
+
+
+/**
  * Supported signals.
  *
  * @type {number}
@@ -51,14 +62,14 @@ anychart.waterfallModule.Arrow.prototype.SUPPORTED_SIGNALS =
     anychart.Signal.NEEDS_REDRAW_LABELS;
 
 
-anychart.waterfallModule.Arrow.prototype.draw = function(settings, layer) {
+anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   if (!this.arrowPath_) {
-    this.arrowPath_ = layer.path();
+    this.arrowPath_ = this.container().path();
   }
 
   var path = this.arrowPath_;
   path.clear();
-  path.zIndex(9000);
+  path.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
 
   var stroke = this.getOption('stroke');
   path.stroke(stroke);
@@ -81,30 +92,41 @@ anychart.waterfallModule.Arrow.prototype.draw = function(settings, layer) {
 };
 
 
+anychart.waterfallModule.Arrow.prototype.drawLabel = function() {
+  console.log('Drawing label');
+};
+
+
+anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
+  this.drawConnector(settings);
+  this.drawLabel();
+};
+
+
 anychart.waterfallModule.Arrow.prototype.label = function(opt_value) {
-  if (!this.labels_) {
-    this.labels_ = new anychart.core.ui.LabelsFactory();
-    this.setupCreated('labels', this.labels_);
-    this.labels_.listenSignals(this.labelsInvalidated_, this);
+  if (!this.labelsSettings_) {
+    this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
+
+    this.labelsSettings_.addThemes('ganttDefaultSimpleLabelsSettings');
+
+    this.labelsSettings_.listenSignals(this.labelsSettingsInvalidated_, this);
   }
 
   if (goog.isDef(opt_value)) {
-    if (goog.isObject(opt_value) && !('enabled' in opt_value))
-      opt_value['enabled'] = true;
-    this.labels_.setup(opt_value);
+    this.labelsSettings_.setup(opt_value);
     return this;
   }
 
-  return this.labels_;
+  return this.labelsSettings_;
 };
 
 
 /**
- * Labels invalidation listener.
+ * Labels settings invalidation listener.
  *
  * @private
  */
-anychart.waterfallModule.Arrow.prototype.labelsInvalidated_ = function() {
+anychart.waterfallModule.Arrow.prototype.labelsSettingsInvalidated_ = function() {
   this.dispatchSignal(anychart.Signal.NEEDS_REDRAW_LABELS);
 };
 
@@ -117,3 +139,26 @@ anychart.waterfallModule.Arrow.prototype.setupByJSON = function(config, opt_defa
 
   anychart.core.settings.deserialize(this, anychart.waterfallModule.Arrow.OWN_DESCRIPTORS, config, opt_default);
 };
+
+
+/** @inheritDoc */
+anychart.waterfallModule.Arrow.prototype.serialize = function() {
+  var json = anychart.waterfallModule.Arrow.base(this, 'serialize');
+  anychart.core.settings.serialize(this, anychart.waterfallModule.Arrow.OWN_DESCRIPTORS, json, void 0, void 0, true);
+
+  json['label'] = this.label().serialize();
+
+  return json;
+};
+
+
+//region --- exports
+/**
+ * @suppress {deprecated}
+ */
+(function() {
+  var proto = anychart.waterfallModule.Arrow.prototype;
+
+  proto['label'] = proto.label;
+})();
+//endregion

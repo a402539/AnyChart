@@ -1235,12 +1235,32 @@ anychart.waterfallModule.Chart.prototype.arrows = function() {
     this.arrowsManager_ = new anychart.waterfallModule.ArrowsManager(this);
   }
   return this.arrowsManager_;
-}
+};
 
 
 anychart.waterfallModule.Chart.prototype.addArrow = function(options) {
   return this.arrows().addArrow(options);
-}
+};
+
+
+anychart.waterfallModule.Chart.prototype.getArrow = function(index) {
+  return this.arrows().getArrow(index);
+};
+
+
+anychart.waterfallModule.Chart.prototype.removeArrowAt = function(index) {
+  return this.arrows().removeArrowAt(index);
+};
+
+
+anychart.waterfallModule.Chart.prototype.removeArrow = function(arrow) {
+  return this.arrows().removeArrow(arrow);
+};
+
+
+anychart.waterfallModule.Chart.prototype.getAllArrows = function() {
+  return this.arrows().getAllArrows();
+};
 //endregion
 //region --- setup/dispose
 /** @inheritDoc */

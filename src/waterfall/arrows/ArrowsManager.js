@@ -23,6 +23,9 @@ goog.inherits(anychart.waterfallModule.ArrowsManager, anychart.core.Base);
 anychart.waterfallModule.ArrowsManager.prototype.SUPPORTED_SIGNALS = anychart.Signal.NEEDS_REDRAW;
 
 
+anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX = 30;
+
+
 anychart.waterfallModule.ArrowsManager.prototype.getArrowStackBounds_ = function(arrow) {
   var chart = this.chart_;
   var xScale = chart.xScale();
@@ -44,6 +47,10 @@ anychart.waterfallModule.ArrowsManager.prototype.getArrowStackBounds_ = function
 
 
 anychart.waterfallModule.ArrowsManager.prototype.getArrowDrawInfo_ = function(arrow) {
+  var settings = {};
+  this.heightCache_ = this.heightCache_ || {};
+  var heightCache = this.heightCache_;
+  var isArrowUp = this.isArrowUp_(arrow);
   var stacksBounds = this.getArrowStackBounds_(arrow);
 
   var fromStackBounds = stacksBounds.from;
@@ -75,6 +82,8 @@ anychart.waterfallModule.ArrowsManager.prototype.getArrowDrawInfo_ = function(ar
     settings.horizontalLineY += isArrowUp ? -arrowGap : arrowGap;
     heightCache[settings.from] = settings.horizontalLineY;
   }
+
+  return settings;
 }
 
 
@@ -103,76 +112,55 @@ anychart.waterfallModule.ArrowsManager.prototype.calculateArrows_ = function() {
 
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
-    var settings = {};
-
-    var stacksBounds = this.getArrowStackBounds_(arrow);
-
-    var fromStackBounds = stacksBounds.from;
-    var toStackBounds = stacksBounds.to;
-
-    var isArrowUp = this.isArrowUp_(arrow);
-
-    var arrowStartPoint = new anychart.math.Point2D(
-      fromStackBounds.left + fromStackBounds.width / 2,
-      isArrowUp ? fromStackBounds.getTop() : fromStackBounds.getBottom()
-    );
-
-    var arrowEndPoint = new anychart.math.Point2D(
-      toStackBounds.left + toStackBounds.width / 2,
-      isArrowUp ? toStackBounds.getTop() : toStackBounds.getBottom()
-    )
-
-    settings.startPoint = arrowStartPoint;
-    settings.endPoint = arrowEndPoint;
-
-    var arrowGap = 20;
-    settings.horizontalLineY = isArrowUp ?
-        Math.min(fromStackBounds.getTop(), toStackBounds.getTop()) - arrowGap :
-        Math.max(fromStackBounds.getBottom(), toStackBounds.getBottom()) + arrowGap;
-
-    if (!goog.isDef(heightCache[settings.from])) {
-      heightCache[settings.from] = settings.horizontalLineY;
-    }
-
-    if (settings.horizontalLineY == heightCache[settings.from]) {
-      settings.horizontalLineY += isArrowUp ? -arrowGap : arrowGap;
-      heightCache[settings.from] = settings.horizontalLineY;
-    }
+    var settings = this.getArrowDrawInfo_(arrow);
 
     this.settings_.push(settings);
   }
-}
+};
 
 anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
   if (!this.arrowsLayer_) {
     this.arrowsLayer_ = chart.rootElement.layer();
-    this.arrowsLayer_.zIndex(9000)
+    this.arrowsLayer_.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
   }
 
   this.calculateArrows_();
 
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
-    arrow.draw(this.settings_[i], this.arrowsLayer_);
+    arrow.container(this.arrowsLayer_);
+    arrow.draw(this.settings_[i]);
   }
 };
 
+
 anychart.waterfallModule.ArrowsManager.prototype.removeArrow = function(arrow) {
-  this.arrows_.splice(this.arrows_.indexOf(arrow), 1);
-  goog.dispose(arrow);
+  var removedItems = this.arrows_.splice(this.arrows_.indexOf(arrow), 1);
+  if (removedItems > 0) {
+    goog.dispose(arrow);
+    return true;
+  }
+  return false;
 };
+
 
 anychart.waterfallModule.ArrowsManager.prototype.removeArrowAt = function(index) {
   var arrow = this.arrows_[index];
+
   if (goog.isDef(arrow)) {
     goog.array.splice(this.arrows_, index, 1);
     goog.dispose(arrow);
+    return true;
   }
+
+  return false;
 }
+
 
 anychart.waterfallModule.ArrowsManager.prototype.getArrow = function(index) {
   return this.arrows_[index] || null;
 };
+
 
 anychart.waterfallModule.ArrowsManager.prototype.addArrow = function(options) {
   var arrow = new anychart.waterfallModule.Arrow();
@@ -183,9 +171,11 @@ anychart.waterfallModule.ArrowsManager.prototype.addArrow = function(options) {
   return arrow;
 };
 
+
 anychart.waterfallModule.ArrowsManager.prototype.getAllArrows = function() {
   return goog.array.clone(this.arrows_);
 };
+
 
 anychart.waterfallModule.ArrowsManager.prototype.arrowInvalidationHandler_ = function() {
   this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
