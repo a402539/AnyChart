@@ -108,8 +108,6 @@ anychart.waterfallModule.ArrowsManager.prototype.calculateArrows_ = function() {
    */
   this.settings_ = [];
 
-  var heightCache = {};
-
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
     var settings = this.getArrowDrawInfo_(arrow);
@@ -117,6 +115,7 @@ anychart.waterfallModule.ArrowsManager.prototype.calculateArrows_ = function() {
     this.settings_.push(settings);
   }
 };
+
 
 anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
   if (!this.arrowsLayer_) {
@@ -135,8 +134,9 @@ anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
 
 
 anychart.waterfallModule.ArrowsManager.prototype.removeArrow = function(arrow) {
-  var removedItems = this.arrows_.splice(this.arrows_.indexOf(arrow), 1);
-  if (removedItems > 0) {
+  var indexToDelete = this.arrows_.indexOf(arrow);
+  if (indexToDelete >= 0) {
+    this.arrows_.splice(indexToDelete, 1);
     goog.dispose(arrow);
     return true;
   }
