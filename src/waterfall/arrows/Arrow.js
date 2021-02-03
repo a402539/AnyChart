@@ -8,8 +8,10 @@ goog.require('anychart.core.ui.OptimizedText');
  * @constructor
  * @extends {anychart.core.VisualBase}
  */
-anychart.waterfallModule.Arrow = function() {
+anychart.waterfallModule.Arrow = function(manager) {
   anychart.waterfallModule.Arrow.base(this, 'constructor');
+
+  this.arrowsManager_ = manager;
 
   anychart.core.settings.createDescriptorsMeta(
     this.descriptorsMeta,
@@ -92,14 +94,18 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
 };
 
 
-anychart.waterfallModule.Arrow.prototype.drawLabel = function() {
+anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
+  var text = this.getText();
+  text.renderTo(this.arrowsManager_.labelsLayerEl_);
+  text.putAt(new anychart.math.Rect(settings.startPoint.x, settings.horizontalLineY, settings.endPoint.x - settings.startPoint.x, 20));
+  text.finalizeComplexity();
   console.log('Drawing label');
 };
 
 
 anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
   this.drawConnector(settings);
-  this.drawLabel();
+  this.drawLabel(settings);
 };
 
 
@@ -149,6 +155,15 @@ anychart.waterfallModule.Arrow.prototype.serialize = function() {
   json['label'] = this.label().serialize();
 
   return json;
+};
+
+
+anychart.waterfallModule.Arrow.prototype.getText = function() {
+  if (!goog.isDef(this.text_)) {
+    this.text_ = new anychart.core.ui.OptimizedText();
+  }
+
+  return this.text_;
 };
 
 

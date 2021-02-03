@@ -7,6 +7,7 @@ goog.require('anychart.waterfallModule.Arrow');
  * 
  * @constructor
  * @extends {anychart.core.Base}
+ * @implements {anychart.reflow.IMeasurementsTargetProvider}
  * @param {anychart.waterfallModule.Chart} chart 
  */
 anychart.waterfallModule.ArrowsManager = function(chart) {
@@ -17,10 +18,16 @@ anychart.waterfallModule.ArrowsManager = function(chart) {
   this.arrows_ = [];
 
   this.arrowsLayer_ = null;
+
+  anychart.measuriator.register(this);
 };
 goog.inherits(anychart.waterfallModule.ArrowsManager, anychart.core.Base);
 
-anychart.waterfallModule.ArrowsManager.prototype.SUPPORTED_SIGNALS = anychart.Signal.NEEDS_REDRAW;
+anychart.waterfallModule.ArrowsManager.prototype.SUPPORTED_SIGNALS = 
+  anychart.core.Base.prototype.SUPPORTED_SIGNALS |
+  anychart.Signal.NEEDS_REDRAW |
+  anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
+  anychart.Signal.MEASURE_BOUNDS; //Signal for Measuriator to measure the bounds of collected labels.
 
 
 anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX = 30;
@@ -84,7 +91,7 @@ anychart.waterfallModule.ArrowsManager.prototype.getArrowDrawInfo_ = function(ar
   }
 
   return settings;
-}
+};
 
 
 anychart.waterfallModule.ArrowsManager.prototype.isArrowUp_ = function(arrow) {
@@ -94,12 +101,10 @@ anychart.waterfallModule.ArrowsManager.prototype.isArrowUp_ = function(arrow) {
   var fromStackIndex = xScale.getIndexByValue(from);
   var fromStackDirection = chart.getStackSum(fromStackIndex, 'diff');
   return fromStackDirection >= 0;
-}
+};
 
 
 anychart.waterfallModule.ArrowsManager.prototype.calculateArrows_ = function() {
-  var chart = this.chart_;
-  var xScale = chart.xScale();
   /**
    * Stores arrows precalculated values.
    * I.e. arrow start point, arrow end point, arrow horizontal line y value.
@@ -117,11 +122,31 @@ anychart.waterfallModule.ArrowsManager.prototype.calculateArrows_ = function() {
 };
 
 
+anychart.waterfallModule.ArrowsManager.prototype.applyLabelsStyle = function() {
+  for (var i = 0; i < this.arrows_.length; i++) {
+    var arrow = this.arrows_[i];
+    var flatSettings = arrow.label().flatten();
+    var text = this.arrows_[i].getText();
+    text.text('Text');
+    text.style(flatSettings);
+    text.prepareComplexity();
+    text.applySettings();
+  }
+};
+
+
 anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
+  var chart = this.chart_;
+  var labelsLayer = this.getLabelsLayer();
+  labelsLayer.parent(chart.rootElement);
+  labelsLayer.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
+  
   if (!this.arrowsLayer_) {
     this.arrowsLayer_ = chart.rootElement.layer();
     this.arrowsLayer_.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
   }
+
+  this.applyLabelsStyle();
 
   this.calculateArrows_();
 
@@ -154,7 +179,7 @@ anychart.waterfallModule.ArrowsManager.prototype.removeArrowAt = function(index)
   }
 
   return false;
-}
+};
 
 
 anychart.waterfallModule.ArrowsManager.prototype.getArrow = function(index) {
@@ -163,9 +188,10 @@ anychart.waterfallModule.ArrowsManager.prototype.getArrow = function(index) {
 
 
 anychart.waterfallModule.ArrowsManager.prototype.addArrow = function(options) {
-  var arrow = new anychart.waterfallModule.Arrow();
+  var arrow = new anychart.waterfallModule.Arrow(this);
   if (goog.isDef(options)) {
     arrow.setup(options);
+    arrow.listenSignals(this.arrowInvalidationHandler_, this);
   }
   this.arrows_.push(arrow);
   return arrow;
@@ -178,5 +204,37 @@ anychart.waterfallModule.ArrowsManager.prototype.getAllArrows = function() {
 
 
 anychart.waterfallModule.ArrowsManager.prototype.arrowInvalidationHandler_ = function() {
-  this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
+  console.log('Arrow invalidated');
+  this.dispatchSignal(
+    anychart.Signal.NEEDS_REDRAW |
+    anychart.Signal.MEASURE_BOUNDS |
+    anychart.Signal.MEASURE_COLLECT
+  );
+};
+
+
+/**
+ * Getter for labels layer.
+ * @return {acgraph.vector.UnmanagedLayer}
+ */
+anychart.waterfallModule.ArrowsManager.prototype.getLabelsLayer = function() {
+  if (!this.labelsLayer_) {
+    this.labelsLayerEl_ = /** @type {Element} */(acgraph.getRenderer().createLayerElement());
+    this.labelsLayer_ = acgraph.unmanagedLayer(this.labelsLayerEl_);
+  }
+  return this.labelsLayer_;
+};
+
+
+//region --- IMeasurementsTargetProvider
+anychart.waterfallModule.ArrowsManager.prototype.provideMeasurements = function() {
+  console.log('Arrows manager is providing measurements');
+  var labels = [];
+  for (var i = 0; i < this.arrows_.length; i++) {
+    var arrow = this.arrows_[i];
+    var label = arrow.getText();
+    labels.push(label);
+  }
+  return labels;
 }
+//endregion
