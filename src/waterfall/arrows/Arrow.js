@@ -11,7 +11,7 @@ goog.require('anychart.core.ui.OptimizedText');
 anychart.waterfallModule.Arrow = function(manager) {
   anychart.waterfallModule.Arrow.base(this, 'constructor');
 
-  this.addThemes('arrow');
+  this.addThemes('waterfall.arrow');
 
   this.arrowsManager_ = manager;
 
