@@ -8,6 +8,8 @@ goog.require('anychart.enums');
 goog.require('anychart.format.Context');
 goog.require('anychart.waterfallModule.Connectors');
 goog.require('anychart.waterfallModule.Series');
+goog.require('anychart.waterfallModule.TotalsStorage');
+goog.require('anychart.waterfallModule.Total');
 
 
 
@@ -26,6 +28,18 @@ anychart.waterfallModule.Chart = function() {
   this.addThemes('waterfall');
 
   this.setType(anychart.enums.ChartTypes.WATERFALL);
+
+  this.totalsStorage = new anychart.waterfallModule.TotalsStorage(this);
+
+
+  var total1 = new anychart.waterfallModule.Total();
+  var total2 = new anychart.waterfallModule.Total();
+
+  total1.setCategory('May');
+  total2.setCategory('Sep');
+
+  this.totalsStorage.addTotal(total1);
+  this.totalsStorage.addTotal(total2);
 
   /**
    * Contains pairs of coordinates, which represent start
@@ -219,6 +233,9 @@ anychart.waterfallModule.Chart.prototype.getConnectorXCoordinate = function(poin
   return pointMiddleX + (isDirectionNormal ? pointHalfWidth : -pointHalfWidth);
 };
 
+anychart.waterfallModule.Chart.prototype.drawTotals = function() {
+  this.totalsStorage.draw();
+}
 
 /** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.afterSeriesDraw = function() {
@@ -232,6 +249,9 @@ anychart.waterfallModule.Chart.prototype.afterSeriesDraw = function() {
   var drawingPlans = this.drawingPlansByXScale[String(goog.getUid(xScale))];
   if (!drawingPlans || !drawingPlans.length)
     return;
+
+  this.drawTotals();
+
   var connectorStroke = /** @type {acgraph.vector.Stroke} */(this.connectors().getOption('stroke'));
   this.connectorPath_.stroke(connectorStroke);
   var thickness = acgraph.vector.getThickness(connectorStroke);
@@ -1219,6 +1239,23 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
 
 
 //endregion
+//region --- Overrides
+anychart.waterfallModule.Chart.prototype.getUsedXScales = function () {
+  var scales = anychart.waterfallModule.Chart.base(this, 'getUsedXScales');
+
+  var totalsStorageXScale = this.totalsStorage.getSeries().xScale();
+
+  scales[goog.getUid(totalsStorageXScale)] = totalsStorageXScale;
+
+  return scales;
+}
+
+
+anychart.waterfallModule.Chart.prototype.getDrawable = function () {
+  var series = anychart.waterfallModule.Chart.base(this, 'getDrawable');
+  return [this.totalsStorage.getSeries(), ...series];
+}
+//endregion
 //region --- setup/dispose
 /** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.serialize = function() {
@@ -1265,6 +1302,28 @@ anychart.waterfallModule.Chart.prototype.disposeInternal = function() {
   );
   anychart.waterfallModule.Chart.base(this, 'disposeInternal');
 };
+
+anychart.waterfallModule.Chart.prototype.calculate = function () {
+  var seriesWithData = goog.array.filter(this.seriesList, function(series){
+    return series && series.data();
+  });
+
+  var datasets = goog.array.map(seriesWithData, function (series){
+    return series.data();
+  });
+
+
+  this.totalsStorage.setDatasets(datasets);
+
+  this.totalsStorage.calculate();
+
+  anychart.waterfallModule.Chart.base(this, 'calculate');
+}
+anychart.waterfallModule.Chart.prototype.addTotal = function(config) {
+  this.totals_.push(config);
+
+};
+
 
 
 //endregion

@@ -421,6 +421,54 @@ anychart.core.ChartWithOrthogonalScales.prototype.calculate = function() {
  */
 anychart.core.ChartWithOrthogonalScales.prototype.applyComplexZoom = function() {};
 
+anychart.core.ChartWithOrthogonalScales.prototype.getUsedXScales = function() {
+  var i, series;
+  var seriesCount = this.seriesList.length;
+
+  var scales = {}
+  for (i = 0; i < seriesCount; i++) {
+    series = this.seriesList[i];
+    if (series) {
+      var scale = /** @type {anychart.scales.Base} */(series.xScale());
+      var uid = goog.getUid(scale);
+      scales[uid] = scale;
+    }
+  }
+
+  return scales;
+}
+
+anychart.core.ChartWithOrthogonalScales.prototype.getUsedYScales = function () {
+  var i, series;
+  var seriesCount = this.seriesList.length;
+
+  var scales = {}
+  for (i = 0; i < seriesCount; i++) {
+    series = this.seriesList[i];
+    if (series) {
+      var scale = /** @type {anychart.scales.Base} */(series.yScale());
+      var uid = goog.getUid(scale);
+      scales[uid] = scale;
+    }
+  }
+
+  return scales;
+};
+
+anychart.core.ChartWithOrthogonalScales.prototype.hasNewXScales = function (newScales) {
+  return goog.object.some(newScales, function (scale) {
+    var uid = goog.getUid(scale)
+    return !(uid in this.xScales);
+  }, this);
+};
+
+anychart.core.ChartWithOrthogonalScales.prototype.hasNewYScales = function (newScales) {
+  return goog.object.some(newScales, function (scale) {
+    var uid = goog.getUid(scale)
+    return !(uid in this.yScales);
+  }, this);
+};
+
 
 /**
  * @protected
@@ -429,28 +477,16 @@ anychart.core.ChartWithOrthogonalScales.prototype.makeScaleMaps = function() {
   if (this.hasInvalidationState(anychart.ConsistencyState.SCALE_CHART_SCALE_MAPS)) {
     anychart.performance.start('Scale maps gathering');
     anychart.core.Base.suspendSignalsDispatching(this.seriesList);
-    var i, series;
     var seriesCount = this.seriesList.length;
-    var changed = !seriesCount;
-    var xScales = {};
-    var yScales = {};
-    for (i = 0; i < seriesCount; i++) {
-      series = this.seriesList[i];
-      if (series) {
-        var scale = /** @type {anychart.scales.Base} */(series.xScale());
-        var uid = goog.getUid(scale);
-        xScales[uid] = scale;
-        if (!(uid in this.xScales))
-          changed = true;
-        scale = /** @type {anychart.scales.Base} */(series.yScale());
-        uid = goog.getUid(scale);
-        yScales[uid] = scale;
-        if (!(uid in this.yScales))
-          changed = true;
-      }
-    }
-    this.yScales = yScales;
-    this.xScales = xScales;
+
+    var usedXScales = this.getUsedXScales();
+    var usedYScales = this.getUsedYScales();
+
+    var changed = !seriesCount || this.hasNewXScales(usedXScales) || this.hasNewYScales(usedYScales);
+
+    this.yScales = usedYScales;
+    this.xScales = usedXScales;
+
     if (changed) {
       this.invalidateAnnotations();
       this.invalidate(
@@ -523,6 +559,204 @@ anychart.core.ChartWithOrthogonalScales.prototype.finishOrdinalXScaleCalculation
   }
 };
 
+anychart.core.ChartWithOrthogonalScales.prototype.populateDrawingPlans = function (){
+  var i,j,val,point;
+  for (var uid in this.drawingPlansByXScale) {
+    var drawingPlans = this.drawingPlansByXScale[uid];
+    var xScale = /** @type {anychart.scales.Base} */(drawingPlans[0].series.xScale());
+    // equalizing drawing plans and populating them with missing points
+    if (drawingPlans.length > 1) {
+      var drawingPlan = drawingPlans[drawingPlans.length - 1];
+      if (anychart.utils.instanceOf(xScale, anychart.scales.Ordinal)) {
+        var lastPlanXArray = drawingPlan.xArray;
+        // we need to populate other series data with missing points to the length of the last array
+        for (i = 0; i < drawingPlans.length - 1; i++) {
+          drawingPlan = drawingPlans[i];
+          for (j = drawingPlan.data.length; j < lastPlanXArray.length; j++) {
+            drawingPlan.data.push(anychart.core.series.Cartesian.makeMissingPoint(lastPlanXArray[j]));
+          }
+        }
+      } else {
+        var registry = [];
+        var data0, data1, dataLength0, dataLength1, current0, current1, val0, val1, inc0, inc1;
+        // step one - we merge first two plans to prevent first light-loaded run on the first source with empty res array
+        data0 = drawingPlans[0].data;
+        data1 = drawingPlans[1].data;
+        dataLength0 = data0.length;
+        dataLength1 = data1.length;
+        current0 = 0;
+        current1 = 0;
+        val0 = current0 < dataLength0 ? data0[current0].data['x'] : NaN;
+        val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
+        while (!isNaN(val0) && !isNaN(val1)) {
+          inc0 = val0 <= val1;
+          inc1 = val0 >= val1;
+          registry.push(inc0 ? val0 : val1);
+          if (inc0) {
+            current0++;
+            val0 = current0 < dataLength0 ? data0[current0].data['x'] : NaN;
+          }
+          if (inc1) {
+            current1++;
+            val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
+          }
+        }
+        while (!isNaN(val0)) {
+          registry.push(val0);
+          current0++;
+          val0 = current0 < dataLength0 ? data0[current0].data['x'] : NaN;
+        }
+        while (!isNaN(val1)) {
+          registry.push(val1);
+          current1++;
+          val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
+        }
+
+        // step two - we merge i-th source and the merge result of the previous arrays.
+        for (i = 2; i < drawingPlans.length; i++) {
+          var res = [];
+          data0 = registry;
+          data1 = drawingPlans[i].data;
+          dataLength0 = data0.length;
+          dataLength1 = data1.length;
+          current0 = 0;
+          current1 = 0;
+          val0 = current0 < dataLength0 ? data0[current0] : NaN;
+          val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
+          while (!isNaN(val0) && !isNaN(val1)) {
+            inc0 = val0 <= val1;
+            inc1 = val0 >= val1;
+            res.push(inc0 ? val0 : val1);
+            if (inc0) {
+              current0++;
+              val0 = current0 < dataLength0 ? data0[current0] : NaN;
+            }
+            if (inc1) {
+              current1++;
+              val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
+            }
+          }
+          while (!isNaN(val0)) {
+            res.push(val0);
+            current0++;
+            val0 = current0 < dataLength0 ? data0[current0] : NaN;
+          }
+          while (!isNaN(val1)) {
+            res.push(val1);
+            current1++;
+            val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
+          }
+          registry = res;
+        }
+
+        // now we've got the registry of unique X'es
+        // we should ensure, that all drawing plans have the same length
+        for (i = 0; i < drawingPlans.length; i++) {
+          drawingPlan = drawingPlans[i];
+          data0 = drawingPlan.data;
+          dataLength0 = data0.length;
+          if (dataLength0 < registry.length) {
+            var resultingData = [];
+            current0 = 0;
+            point = data0[current0];
+            val0 = point ? point.data['x'] : NaN;
+            for (j = 0; j < registry.length; j++) {
+              val1 = registry[j];
+              if (val0 <= val1) { // false for val0 == NaN
+                resultingData.push(point);
+                current0++;
+                point = data0[current0];
+                val0 = point ? point.data['x'] : NaN;
+              } else {
+                resultingData.push(anychart.core.series.Cartesian.makeMissingPoint(val1));
+              }
+            }
+            drawingPlan.data = resultingData;
+          }
+        }
+      }
+    }
+    var hasExcludes = false;
+    var excludesMap = {};
+    for (i = 0; i < drawingPlans.length; i++) {
+      drawingPlan = drawingPlans[i];
+      var series = /** @type {anychart.core.series.Cartesian} */(drawingPlan.series);
+      var seriesExcludes = series.getExcludedIndexesInternal();
+      if (seriesExcludes.length) {
+        hasExcludes = true;
+        for (j = 0; j < seriesExcludes.length; j++) {
+          var index = seriesExcludes[j];
+          excludesMap[index] = true;
+          drawingPlan.data[index].meta['missing'] = anychart.core.series.mixPointAbsenceReason(
+              drawingPlan.data[index].meta['missing'],
+              anychart.core.series.PointAbsenceReason.EXCLUDED_POINT);
+        }
+      }
+    }
+    if (hasExcludes) {
+      excludesMap = goog.object.filter(excludesMap, function(ignored, index) {
+        for (var i = 0; i < drawingPlans.length; i++) {
+          var drawingPlan = drawingPlans[i];
+          var meta = drawingPlan.data[+index].meta;
+          if (!anychart.core.series.filterPointAbsenceReason(meta['missing'],
+              anychart.core.series.PointAbsenceReason.EXCLUDED_OR_ARTIFICIAL))
+            return false;
+        }
+        return true;
+      });
+    }
+    drawingPlan = drawingPlans[0];
+    if (xScale.needsAutoCalc()) {
+      if (anychart.utils.instanceOf(xScale, anychart.scales.Ordinal)) {
+        this.autoCalcOrdinalXScale(/** @type {anychart.scales.Ordinal} */ (xScale), drawingPlans, hasExcludes, excludesMap);
+      } else if (drawingPlan.data.length) {
+        if (hasExcludes) {
+          for (i = 0; i < drawingPlan.data.length; i++) {
+            if (!(i in excludesMap)) {
+              xScale.extendDataRange(drawingPlan.data[i].data['x']);
+            }
+          }
+        } else {
+          xScale.extendDataRange(
+              drawingPlan.data[0].data['x'],
+              drawingPlan.data[drawingPlan.data.length - 1].data['x']);
+        }
+        if (drawingPlan.series.supportsError()) {
+          var iterator;
+          var error;
+          if (drawingPlan.hasPointXErrors) {
+            iterator = drawingPlan.series.getResetIterator();
+            while (iterator.advance()) { // we need iterator to make error work :(
+              if (!anychart.core.series.filterPointAbsenceReason(iterator.meta('missing'),
+                  anychart.core.series.PointAbsenceReason.ANY_BUT_RANGE)) {
+                error = drawingPlan.series.error().getErrorValues(true);
+                val = iterator.get('x');
+                xScale.extendDataRange(val - error[0], val + error[1]);
+              }
+            }
+          } else if (drawingPlan.series.error().hasGlobalErrorValues()) {
+            iterator = drawingPlan.series.getResetIterator();
+            iterator.select(0);
+            error = drawingPlan.series.error().getErrorValues(true);
+            val = iterator.get('x');
+            xScale.extendDataRange(val - error[0], val + error[1]);
+            iterator.select(drawingPlan.data.length - 1);
+            error = drawingPlan.series.error().getErrorValues(true);
+            val = iterator.get('x');
+            xScale.extendDataRange(val - error[0], val + error[1]);
+          }
+        }
+      }
+    }
+    if (anychart.utils.instanceOf(xScale, anychart.scales.Ordinal)) {
+      this.finishOrdinalXScaleCalculation(/** @type {anychart.scales.Ordinal} */ (xScale), drawingPlans);
+    }
+  }
+}
+
+anychart.core.ChartWithOrthogonalScales.prototype.getDrawable = function () {
+  return this.seriesList;
+}
 
 /**
  * @protected
@@ -532,8 +766,8 @@ anychart.core.ChartWithOrthogonalScales.prototype.calculateXScales = function() 
     anychart.performance.start('X scales and drawing plan calculation');
     var i, j, series;
     var xScale;
-    var seriesCount = this.seriesList.length;
-    var drawingPlan, drawingPlans, drawingPlansByYScale, uid, point, val;
+
+    var drawingPlan, drawingPlans, drawingPlansByYScale, uid;
     this.drawingPlans = [];
     this.drawingPlansByXScale = {};
     /**
@@ -547,236 +781,50 @@ anychart.core.ChartWithOrthogonalScales.prototype.calculateXScales = function() 
       if (xScale.needsAutoCalc())
         xScale.startAutoCalc();
     }
-    for (i = 0; i < seriesCount; i++) {
-      series = /** @type {anychart.core.series.Cartesian} */(this.seriesList[i]);
-      if (!series || !series.enabled()) continue;
-      xScale = /** @type {anychart.scales.Base} */(series.xScale());
-      uid = goog.getUid(xScale);
-      drawingPlans = this.drawingPlansByXScale[uid];
-      if (!drawingPlans)
-        this.drawingPlansByXScale[uid] = drawingPlans = [];
-      if (anychart.utils.instanceOf(xScale, anychart.scales.Ordinal)) {
-        var xHashMap, xArray;
-        var restricted = !xScale.needsAutoCalc();
-        if (drawingPlans.length) {
-          drawingPlan = drawingPlans[drawingPlans.length - 1];
-          xHashMap = drawingPlan.xHashMap;
-          xArray = drawingPlan.xArray;
-        } else {
-          if (restricted) {
-            xArray = xScale.values();
-            xHashMap = xScale.getValuesMapInternal();
-          } else {
-            xArray = [];
-            xHashMap = {};
-          }
-        }
-        drawingPlan = series.getOrdinalDrawingPlan(xHashMap, xArray, restricted);
-      } else {
-        drawingPlan = series.getScatterDrawingPlan(true, anychart.utils.instanceOf(xScale, anychart.scales.DateTime));
-      }
-      drawingPlans.push(drawingPlan);
-      this.drawingPlans.push(drawingPlan);
-      drawingPlansByYScale = this.drawingPlansByYAndXScale_[uid];
-      if (!drawingPlansByYScale)
-        this.drawingPlansByYAndXScale_[uid] = drawingPlansByYScale = {};
-      uid = goog.getUid(series.yScale());
-      drawingPlans = drawingPlansByYScale[uid];
-      if (!drawingPlans)
-        drawingPlansByYScale[uid] = drawingPlans = [];
-      drawingPlans.push(drawingPlan);
-    }
-    for (uid in this.drawingPlansByXScale) {
-      drawingPlans = this.drawingPlansByXScale[uid];
-      xScale = /** @type {anychart.scales.Base} */(drawingPlans[0].series.xScale());
-      // equalizing drawing plans and populating them with missing points
-      if (drawingPlans.length > 1) {
-        drawingPlan = drawingPlans[drawingPlans.length - 1];
-        if (anychart.utils.instanceOf(xScale, anychart.scales.Ordinal)) {
-          var lastPlanXArray = drawingPlan.xArray;
-          // we need to populate other series data with missing points to the length of the last array
-          for (i = 0; i < drawingPlans.length - 1; i++) {
-            drawingPlan = drawingPlans[i];
-            for (j = drawingPlan.data.length; j < lastPlanXArray.length; j++) {
-              drawingPlan.data.push(anychart.core.series.Cartesian.makeMissingPoint(lastPlanXArray[j]));
-            }
-          }
-        } else {
-          var registry = [];
-          var data0, data1, dataLength0, dataLength1, current0, current1, val0, val1, inc0, inc1;
-          // step one - we merge first two plans to prevent first light-loaded run on the first source with empty res array
-          data0 = drawingPlans[0].data;
-          data1 = drawingPlans[1].data;
-          dataLength0 = data0.length;
-          dataLength1 = data1.length;
-          current0 = 0;
-          current1 = 0;
-          val0 = current0 < dataLength0 ? data0[current0].data['x'] : NaN;
-          val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
-          while (!isNaN(val0) && !isNaN(val1)) {
-            inc0 = val0 <= val1;
-            inc1 = val0 >= val1;
-            registry.push(inc0 ? val0 : val1);
-            if (inc0) {
-              current0++;
-              val0 = current0 < dataLength0 ? data0[current0].data['x'] : NaN;
-            }
-            if (inc1) {
-              current1++;
-              val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
-            }
-          }
-          while (!isNaN(val0)) {
-            registry.push(val0);
-            current0++;
-            val0 = current0 < dataLength0 ? data0[current0].data['x'] : NaN;
-          }
-          while (!isNaN(val1)) {
-            registry.push(val1);
-            current1++;
-            val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
-          }
 
-          // step two - we merge i-th source and the merge result of the previous arrays.
-          for (i = 2; i < drawingPlans.length; i++) {
-            var res = [];
-            data0 = registry;
-            data1 = drawingPlans[i].data;
-            dataLength0 = data0.length;
-            dataLength1 = data1.length;
-            current0 = 0;
-            current1 = 0;
-            val0 = current0 < dataLength0 ? data0[current0] : NaN;
-            val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
-            while (!isNaN(val0) && !isNaN(val1)) {
-              inc0 = val0 <= val1;
-              inc1 = val0 >= val1;
-              res.push(inc0 ? val0 : val1);
-              if (inc0) {
-                current0++;
-                val0 = current0 < dataLength0 ? data0[current0] : NaN;
-              }
-              if (inc1) {
-                current1++;
-                val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
-              }
-            }
-            while (!isNaN(val0)) {
-              res.push(val0);
-              current0++;
-              val0 = current0 < dataLength0 ? data0[current0] : NaN;
-            }
-            while (!isNaN(val1)) {
-              res.push(val1);
-              current1++;
-              val1 = current1 < dataLength1 ? data1[current1].data['x'] : NaN;
-            }
-            registry = res;
-          }
-
-          // now we've got the registry of unique X'es
-          // we should ensure, that all drawing plans have the same length
-          for (i = 0; i < drawingPlans.length; i++) {
-            drawingPlan = drawingPlans[i];
-            data0 = drawingPlan.data;
-            dataLength0 = data0.length;
-            if (dataLength0 < registry.length) {
-              var resultingData = [];
-              current0 = 0;
-              point = data0[current0];
-              val0 = point ? point.data['x'] : NaN;
-              for (j = 0; j < registry.length; j++) {
-                val1 = registry[j];
-                if (val0 <= val1) { // false for val0 == NaN
-                  resultingData.push(point);
-                  current0++;
-                  point = data0[current0];
-                  val0 = point ? point.data['x'] : NaN;
-                } else {
-                  resultingData.push(anychart.core.series.Cartesian.makeMissingPoint(val1));
-                }
-              }
-              drawingPlan.data = resultingData;
-            }
-          }
-        }
-      }
-      var hasExcludes = false;
-      var excludesMap = {};
-      for (i = 0; i < drawingPlans.length; i++) {
-        drawingPlan = drawingPlans[i];
-        series = /** @type {anychart.core.series.Cartesian} */(drawingPlan.series);
-        var seriesExcludes = series.getExcludedIndexesInternal();
-        if (seriesExcludes.length) {
-          hasExcludes = true;
-          for (j = 0; j < seriesExcludes.length; j++) {
-            var index = seriesExcludes[j];
-            excludesMap[index] = true;
-            drawingPlan.data[index].meta['missing'] = anychart.core.series.mixPointAbsenceReason(
-                drawingPlan.data[index].meta['missing'],
-                anychart.core.series.PointAbsenceReason.EXCLUDED_POINT);
-          }
-        }
-      }
-      if (hasExcludes) {
-        excludesMap = goog.object.filter(excludesMap, function(ignored, index) {
-          for (var i = 0; i < drawingPlans.length; i++) {
-            var drawingPlan = drawingPlans[i];
-            var meta = drawingPlan.data[+index].meta;
-            if (!anychart.core.series.filterPointAbsenceReason(meta['missing'],
-                anychart.core.series.PointAbsenceReason.EXCLUDED_OR_ARTIFICIAL))
-              return false;
-          }
-          return true;
-        });
-      }
-      drawingPlan = drawingPlans[0];
-      if (xScale.needsAutoCalc()) {
+    var drawable = this.getDrawable();
+    for (i = 0; i < drawable.length; i++) {
+      series = /** @type {anychart.core.series.Cartesian} */(drawable[i]);
+      if (series && series.enabled()) {
+        xScale = /** @type {anychart.scales.Base} */(series.xScale());
+        uid = goog.getUid(xScale);
+        drawingPlans = this.drawingPlansByXScale[uid];
+        if (!drawingPlans)
+          this.drawingPlansByXScale[uid] = drawingPlans = [];
         if (anychart.utils.instanceOf(xScale, anychart.scales.Ordinal)) {
-          this.autoCalcOrdinalXScale(/** @type {anychart.scales.Ordinal} */ (xScale), drawingPlans, hasExcludes, excludesMap);
-        } else if (drawingPlan.data.length) {
-          if (hasExcludes) {
-            for (i = 0; i < drawingPlan.data.length; i++) {
-              if (!(i in excludesMap)) {
-                xScale.extendDataRange(drawingPlan.data[i].data['x']);
-              }
-            }
+          var xHashMap, xArray;
+          var restricted = !xScale.needsAutoCalc();
+          if (drawingPlans.length) {
+            drawingPlan = drawingPlans[drawingPlans.length - 1];
+            xHashMap = drawingPlan.xHashMap;
+            xArray = drawingPlan.xArray;
           } else {
-            xScale.extendDataRange(
-                drawingPlan.data[0].data['x'],
-                drawingPlan.data[drawingPlan.data.length - 1].data['x']);
-          }
-          if (drawingPlan.series.supportsError()) {
-            var iterator;
-            var error;
-            if (drawingPlan.hasPointXErrors) {
-              iterator = drawingPlan.series.getResetIterator();
-              while (iterator.advance()) { // we need iterator to make error work :(
-                if (!anychart.core.series.filterPointAbsenceReason(iterator.meta('missing'),
-                        anychart.core.series.PointAbsenceReason.ANY_BUT_RANGE)) {
-                  error = drawingPlan.series.error().getErrorValues(true);
-                  val = iterator.get('x');
-                  xScale.extendDataRange(val - error[0], val + error[1]);
-                }
-              }
-            } else if (drawingPlan.series.error().hasGlobalErrorValues()) {
-              iterator = drawingPlan.series.getResetIterator();
-              iterator.select(0);
-              error = drawingPlan.series.error().getErrorValues(true);
-              val = iterator.get('x');
-              xScale.extendDataRange(val - error[0], val + error[1]);
-              iterator.select(drawingPlan.data.length - 1);
-              error = drawingPlan.series.error().getErrorValues(true);
-              val = iterator.get('x');
-              xScale.extendDataRange(val - error[0], val + error[1]);
+            if (restricted) {
+              xArray = xScale.values();
+              xHashMap = xScale.getValuesMapInternal();
+            } else {
+              xArray = [];
+              xHashMap = {};
             }
           }
+          drawingPlan = series.getOrdinalDrawingPlan(xHashMap, xArray, restricted);
+        } else {
+          drawingPlan = series.getScatterDrawingPlan(true, anychart.utils.instanceOf(xScale, anychart.scales.DateTime));
         }
-      }
-      if (anychart.utils.instanceOf(xScale, anychart.scales.Ordinal)) {
-        this.finishOrdinalXScaleCalculation(/** @type {anychart.scales.Ordinal} */ (xScale), drawingPlans);
+        drawingPlans.push(drawingPlan);
+        this.drawingPlans.push(drawingPlan);
+        drawingPlansByYScale = this.drawingPlansByYAndXScale_[uid];
+        if (!drawingPlansByYScale)
+          this.drawingPlansByYAndXScale_[uid] = drawingPlansByYScale = {};
+        uid = goog.getUid(series.yScale());
+        drawingPlans = drawingPlansByYScale[uid];
+        if (!drawingPlans)
+          drawingPlansByYScale[uid] = drawingPlans = [];
+        drawingPlans.push(drawingPlan);
       }
     }
+
+    this.populateDrawingPlans();
 
     this.calculateAdditionalXScalesExtensions();
 
