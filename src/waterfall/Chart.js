@@ -83,7 +83,8 @@ anychart.waterfallModule.Chart.ZINDEX_CONNECTORS_LABELS = anychart.core.ChartWit
  */
 anychart.waterfallModule.Chart.SUPPORTED_STATES = {
   STACK_LABELS: 'stackLabels',
-  CONNECTORS_LABELS: 'connectorsLabels'
+  CONNECTORS_LABELS: 'connectorsLabels',
+  ARROWS: 'arrows'
 };
 
 
@@ -92,7 +93,8 @@ anychart.consistency.supportStates(
     anychart.enums.Store.WATERFALL,
     [
      anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
-     anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS
+     anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS,
+     anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
     ]
 );
 
@@ -192,10 +194,15 @@ anychart.waterfallModule.Chart.prototype.postProcessStacking = function(drawingP
 /** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.drawContent = function(contentBounds) {
   anychart.waterfallModule.Chart.base(this, 'drawContent', contentBounds);
+  console.log('Waterfall chart drawContent()');
 
   this.drawLabels();
   
   this.arrows().draw();
+  this.markStateConsistent(
+    anychart.enums.Store.WATERFALL,
+    anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
+  );
 };
 
 
@@ -1230,11 +1237,38 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
 
 //endregion
 //region --- Arrows
+anychart.waterfallModule.Chart.prototype.drawArrows = function() {
+  var arrowsInvalidated = this.hasStateInvalidation(
+    anychart.enums.Store.WATERFALL, 
+    anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
+  );
+
+  if (arrowsInvalidated) {
+    this.arrows().draw();
+    this.markStateConsistent(
+      anychart.enums.Store.WATERFALL,
+      anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
+    );
+  }
+};
+
+
 anychart.waterfallModule.Chart.prototype.arrows = function() {
   if (!goog.isDef(this.arrowsManager_)) {
     this.arrowsManager_ = new anychart.waterfallModule.ArrowsManager(this);
+    this.arrowsManager_.listenSignals(this.arrowsInvalidationHandler_, this);
   }
   return this.arrowsManager_;
+};
+
+
+anychart.waterfallModule.Chart.prototype.arrowsInvalidationHandler_ = function() {
+  console.log('Arrows invalidation handler');
+  this.invalidateState(
+    anychart.enums.Store.WATERFALL,
+    anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS,
+    anychart.Signal.NEEDS_REDRAW
+  );
 };
 
 

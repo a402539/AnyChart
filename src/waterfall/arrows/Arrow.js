@@ -11,6 +11,8 @@ goog.require('anychart.core.ui.OptimizedText');
 anychart.waterfallModule.Arrow = function(manager) {
   anychart.waterfallModule.Arrow.base(this, 'constructor');
 
+  this.addThemes('arrow');
+
   this.arrowsManager_ = manager;
 
   anychart.core.settings.createDescriptorsMeta(
@@ -65,6 +67,7 @@ anychart.waterfallModule.Arrow.prototype.SUPPORTED_SIGNALS =
 
 
 anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
+  console.log('Arrow drawConnector()');
   if (!this.arrowPath_) {
     this.arrowPath_ = this.container().path();
   }
@@ -95,15 +98,23 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
 
 
 anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
+  console.log('Arrow drawLabel()');
   var text = this.getText();
   text.renderTo(this.arrowsManager_.labelsLayerEl_);
-  text.putAt(new anychart.math.Rect(settings.startPoint.x, settings.horizontalLineY, settings.endPoint.x - settings.startPoint.x, 20));
+  text.putAt(
+    new anychart.math.Rect(
+      settings.startPoint.x,
+      settings.horizontalLineY,
+      settings.endPoint.x - settings.startPoint.x,
+      0
+    )
+  );
   text.finalizeComplexity();
-  console.log('Drawing label');
 };
 
 
 anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
+  console.log('Arrow draw()');
   this.drawConnector(settings);
   this.drawLabel(settings);
 };
@@ -113,7 +124,7 @@ anychart.waterfallModule.Arrow.prototype.label = function(opt_value) {
   if (!this.labelsSettings_) {
     this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
 
-    this.labelsSettings_.addThemes('ganttDefaultSimpleLabelsSettings');
+    this.labelsSettings_.addThemes('defaultFontSettings');
 
     this.labelsSettings_.listenSignals(this.labelsSettingsInvalidated_, this);
   }

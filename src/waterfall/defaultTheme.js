@@ -87,6 +87,11 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'position': 'auto',
         'anchor': 'auto'
       }
+    },
+    'arrow': {
+      'label': {
+        'fontSize': '12px'
+      }
     }
   }
 });

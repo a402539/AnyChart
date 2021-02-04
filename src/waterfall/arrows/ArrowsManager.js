@@ -55,7 +55,7 @@ anychart.waterfallModule.ArrowsManager.prototype.getArrowStackBounds_ = function
 
 anychart.waterfallModule.ArrowsManager.prototype.getArrowDrawInfo_ = function(arrow) {
   var settings = {};
-  this.heightCache_ = this.heightCache_ || {};
+  this.heightCache_ = this.heightCache_;
   var heightCache = this.heightCache_;
   var isArrowUp = this.isArrowUp_(arrow);
   var stacksBounds = this.getArrowStackBounds_(arrow);
@@ -112,6 +112,7 @@ anychart.waterfallModule.ArrowsManager.prototype.calculateArrows_ = function() {
    * @type {Array.<{{from: string, to: string, startPoint: {x: number, y: number}, endPoint: {x: number, y: number}}>}
    */
   this.settings_ = [];
+  this.heightCache_ = {};
 
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
@@ -136,6 +137,7 @@ anychart.waterfallModule.ArrowsManager.prototype.applyLabelsStyle = function() {
 
 
 anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
+  console.log('Arrows manager draw()');
   var chart = this.chart_;
   var labelsLayer = this.getLabelsLayer();
   labelsLayer.parent(chart.rootElement);
