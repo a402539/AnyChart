@@ -87,6 +87,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
         'position': 'auto',
         'anchor': 'auto'
       }
+    },
+    'totals': {
+
     }
   }
 });

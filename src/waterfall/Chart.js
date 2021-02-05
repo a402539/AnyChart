@@ -31,16 +31,6 @@ anychart.waterfallModule.Chart = function() {
 
   this.totalsStorage = new anychart.waterfallModule.TotalsStorage(this);
 
-
-  var total1 = new anychart.waterfallModule.Total();
-  var total2 = new anychart.waterfallModule.Total();
-
-  total1.setCategory('May');
-  total2.setCategory('Sep');
-
-  this.totalsStorage.addTotal(total1);
-  this.totalsStorage.addTotal(total2);
-
   /**
    * Contains pairs of coordinates, which represent start
    * and end of the waterfall connector. They are used
@@ -76,6 +66,8 @@ anychart.waterfallModule.Chart = function() {
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
     ['dataMode', anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.SCALE_CHART_SCALES | anychart.ConsistencyState.SCALE_CHART_Y_SCALES, anychart.Signal.NEEDS_REDRAW]
   ]);
+
+  this.setupTotalsStorage_();
 };
 goog.inherits(anychart.waterfallModule.Chart, anychart.core.CartesianBase);
 
@@ -95,8 +87,9 @@ anychart.waterfallModule.Chart.ZINDEX_CONNECTORS_LABELS = anychart.core.ChartWit
  * @enum {string}
  */
 anychart.waterfallModule.Chart.SUPPORTED_STATES = {
+  CONNECTORS_LABELS: 'connectorsLabels',
   STACK_LABELS: 'stackLabels',
-  CONNECTORS_LABELS: 'connectorsLabels'
+  TOTALS: 'totals',
 };
 
 
@@ -104,8 +97,9 @@ anychart.consistency.supportStates(
     anychart.waterfallModule.Chart,
     anychart.enums.Store.WATERFALL,
     [
-     anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
-     anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS
+      anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS,
+      anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
+      anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS
     ]
 );
 
@@ -233,8 +227,9 @@ anychart.waterfallModule.Chart.prototype.getConnectorXCoordinate = function(poin
   return pointMiddleX + (isDirectionNormal ? pointHalfWidth : -pointHalfWidth);
 };
 
-anychart.waterfallModule.Chart.prototype.drawTotals = function() {
+anychart.waterfallModule.Chart.prototype.drawTotals = function () {
   this.totalsStorage.draw();
+  this.markStateConsistent(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS);
 }
 
 /** @inheritDoc */
@@ -1139,7 +1134,10 @@ anychart.waterfallModule.Chart.prototype.getStackBottom = function(index) {
 //region --- Series
 /** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.seriesInvalidated = function(event) {
-  this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS);
+  this.invalidateMultiState(anychart.enums.Store.WATERFALL, [
+    anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
+    anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS
+  ], anychart.Signal.NEEDS_REDRAW);
 
   anychart.waterfallModule.Chart.base(this, 'seriesInvalidated', event);
 };
@@ -1239,7 +1237,48 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
 
 
 //endregion
+//region --- Totals
+anychart.waterfallModule.Chart.prototype.addTotal = function (total) {
+  return this.totalsStorage.addTotal(total);
+}
+
+anychart.waterfallModule.Chart.prototype.removeTotal = function (totalToRemove) {
+  this.totalsStorage.removeTotal(totalToRemove);
+  return this;
+}
+
+anychart.waterfallModule.Chart.prototype.removeTotalAt = function (indexToRemove) {
+  this.totalsStorage.removeTotalAt(indexToRemove);
+  return this;
+}
+
+anychart.waterfallModule.Chart.prototype.getTotalAt = function (index) {
+  return this.totalsStorage.getTotalAt(index);
+}
+
+anychart.waterfallModule.Chart.prototype.getAllTotals = function () {
+  return this.totalsStorage.getAllTotals();
+}
+
+anychart.waterfallModule.Chart.prototype.totalsStorageInvalidated = function () {
+  console.log('signal from total storage');
+  this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS);
+
+  var stateToInvalidate =
+      anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.SERIES_DATA;
+  this.invalidate(stateToInvalidate, anychart.Signal.NEEDS_REDRAW);
+}
+
+anychart.waterfallModule.Chart.prototype.setupTotalsStorage_ = function () {
+  this.totalsStorage.listenSignals(this.totalsStorageInvalidated, this);
+};
+
+//endregion
 //region --- Overrides
+
+/**
+ * @inheritDoc
+ */
 anychart.waterfallModule.Chart.prototype.getUsedXScales = function () {
   var scales = anychart.waterfallModule.Chart.base(this, 'getUsedXScales');
 
@@ -1253,7 +1292,7 @@ anychart.waterfallModule.Chart.prototype.getUsedXScales = function () {
 
 anychart.waterfallModule.Chart.prototype.getDrawable = function () {
   var series = anychart.waterfallModule.Chart.base(this, 'getDrawable');
-  return [this.totalsStorage.getSeries(), ...series];
+  return goog.array.concat([this.totalsStorage.getSeries()], series);
 }
 //endregion
 //region --- setup/dispose
@@ -1303,28 +1342,27 @@ anychart.waterfallModule.Chart.prototype.disposeInternal = function() {
   anychart.waterfallModule.Chart.base(this, 'disposeInternal');
 };
 
+anychart.waterfallModule.Chart.prototype.updateTotalsStorage = function (){
+  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS)) {
+    var seriesWithData = goog.array.filter(this.seriesList, function (series) {
+      return series && series.data();
+    });
+
+    var datasets = goog.array.map(seriesWithData, function (series) {
+      return series.data();
+    });
+
+    this.totalsStorage.setDatasets(datasets);
+
+    this.totalsStorage.calculate();
+  }
+}
+
 anychart.waterfallModule.Chart.prototype.calculate = function () {
-  var seriesWithData = goog.array.filter(this.seriesList, function(series){
-    return series && series.data();
-  });
-
-  var datasets = goog.array.map(seriesWithData, function (series){
-    return series.data();
-  });
-
-
-  this.totalsStorage.setDatasets(datasets);
-
-  this.totalsStorage.calculate();
+  this.updateTotalsStorage();
 
   anychart.waterfallModule.Chart.base(this, 'calculate');
-}
-anychart.waterfallModule.Chart.prototype.addTotal = function(config) {
-  this.totals_.push(config);
-
 };
-
-
 
 //endregion
 //region --- exports

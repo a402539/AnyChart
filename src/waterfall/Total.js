@@ -14,21 +14,31 @@ goog.require('anychart.core.ui.LabelsFactory');
 anychart.waterfallModule.Total = function () {
     anychart.waterfallModule.Total.base(this, 'constructor');
 
-    this.series = [];
-
-
-    anychart.core.settings.createDescriptorsMeta(
-        this.descriptorsMeta,
-        [
-            ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
-        ]
-    );
+    var meta = [
+        ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
+        ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
+        ['category', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
+    ]
+    anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, meta);
 };
 goog.inherits(anychart.waterfallModule.Total, anychart.core.Base);
 
-anychart.waterfallModule.Total.prototype.setCategory = function (category) {
-    this.category_ = category;
-};
+anychart.waterfallModule.Total.PROPERTY_DESCRIPTORS = (function() {
+    /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
+    var map = {};
+
+    anychart.core.settings.createDescriptors(map, [
+        anychart.core.settings.descriptors.STROKE,
+        anychart.core.settings.descriptors.FILL,
+        [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'category', anychart.core.settings.stringNormalizer],
+    ]);
+
+    return map;
+})();
+anychart.core.settings.populate(anychart.waterfallModule.Total, anychart.waterfallModule.Total.PROPERTY_DESCRIPTORS);
+
+anychart.waterfallModule.Total.prototype.SUPPORTED_SIGNALS = anychart.Signal.NEEDS_REDRAW_APPEARANCE;
+
 
 anychart.waterfallModule.Total.prototype.calculate = function (values) {
     var totalValue = goog.array.reduce(values, function (totalValue, rows) {
@@ -38,36 +48,14 @@ anychart.waterfallModule.Total.prototype.calculate = function (values) {
     }, 0)
 
     return [
-        ['Total '+ this.category_, totalValue]
+        {x: 'Total ' + this.getOption('category'), value: totalValue}
     ]
 };
 
-
-anychart.waterfallModule.Total.prototype.getValue = function () {
-    function getTotalValue(dataSet) {
-        var iterator = dataSet.getIterator();
-        var value = 0;
-        while (iterator.advance()) {
-            value += iterator.get('value');
-        }
-
-        return value;
-    }
-
-    return goog.array.reduce(this.series, function (totalValue, dataSet) {
-        return totalValue + getTotalValue(dataSet);
-    }, 0)
-}
-
-anychart.waterfallModule.Total.prototype.getCategories = function () {
-
-    return {
-        target: this.category_,
-        totals: [this.v]
-    };
+/**
+ * @inheritDoc
+ */
+anychart.waterfallModule.Total.prototype.setupByJSON = function(json, opt_default) {
+    anychart.core.settings.deserialize(this, anychart.waterfallModule.Total.PROPERTY_DESCRIPTORS, json, opt_default);
 };
 
-
-(function () {
-
-})();
