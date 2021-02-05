@@ -90,7 +90,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     },
     'arrow': {
       'label': {
-        'fontSize': '12px'
+        'fontSize': '12px',
+        'position': 'center',
+        'anchor': 'center'
       }
     }
   }

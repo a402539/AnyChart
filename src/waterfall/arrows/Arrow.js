@@ -66,13 +66,19 @@ anychart.waterfallModule.Arrow.prototype.SUPPORTED_SIGNALS =
     anychart.Signal.NEEDS_REDRAW_LABELS;
 
 
-anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
-  console.log('Arrow drawConnector()');
+anychart.waterfallModule.Arrow.prototype.getArrowPath = function() {
   if (!this.arrowPath_) {
     this.arrowPath_ = this.container().path();
   }
 
-  var path = this.arrowPath_;
+  return this.arrowPath_;
+};
+
+
+anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
+  console.log('Arrow drawConnector()');
+
+  var path = this.getArrowPath();
   path.clear();
   path.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
 
@@ -89,6 +95,22 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   path.lineTo(
     settings.endPoint.x,
     settings.horizontalLineY
+  );
+  path.lineTo(
+    settings.endPoint.x,
+    settings.endPoint.y
+  );
+
+  // Arrow head.
+  var isArrowUp = (settings.startPoint.y - settings.horizontalLineY) >= 0;
+  var arrowHeadYDelta = isArrowUp ? -10 : 10;
+  path.lineTo(
+    settings.endPoint.x - 5,
+    settings.endPoint.y + arrowHeadYDelta
+  );
+  path.lineTo(
+    settings.endPoint.x + 5,
+    settings.endPoint.y + arrowHeadYDelta
   );
   path.lineTo(
     settings.endPoint.x,
@@ -118,6 +140,12 @@ anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
   this.drawConnector(settings);
   this.drawLabel(settings);
 };
+
+
+anychart.waterfallModule.Arrow.prototype.clear = function() {
+  this.getText().renderTo(null);
+  this.getArrowPath().clear();
+}
 
 
 anychart.waterfallModule.Arrow.prototype.label = function(opt_value) {

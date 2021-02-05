@@ -43,8 +43,8 @@ anychart.waterfallModule.ArrowsManager.prototype.getArrowStackBounds_ = function
   var fromStackIndex = xScale.getIndexByValue(from);
   var toStackIndex = xScale.getIndexByValue(to);
 
-  var fromStackBounds = chart.getStackBounds(fromStackIndex);
-  var toStackBounds = chart.getStackBounds(toStackIndex);
+  var fromStackBounds = anychart.utils.isNaN(fromStackIndex) ? null : chart.getStackBounds(fromStackIndex);
+  var toStackBounds = anychart.utils.isNaN(toStackIndex) ? null : chart.getStackBounds(toStackIndex);
 
   return {
     from: fromStackBounds,
@@ -59,6 +59,13 @@ anychart.waterfallModule.ArrowsManager.prototype.getArrowDrawInfo_ = function(ar
   var heightCache = this.heightCache_;
   var isArrowUp = this.isArrowUp_(arrow);
   var stacksBounds = this.getArrowStackBounds_(arrow);
+
+  if (goog.isNull(stacksBounds.from) || goog.isNull(stacksBounds.to)) {
+    settings.isCorrect = false;
+    return settings
+  }
+
+  settings.isCorrect = true;
 
   var fromStackBounds = stacksBounds.from;
   var toStackBounds = stacksBounds.to;
@@ -128,7 +135,11 @@ anychart.waterfallModule.ArrowsManager.prototype.applyLabelsStyle = function() {
     var arrow = this.arrows_[i];
     var flatSettings = arrow.label().flatten();
     var text = this.arrows_[i].getText();
-    text.text('Text');
+
+    var formatProvider = this.chart_.getFormatProviderForConnectorLabel(1, 0);
+    var textValue = arrow.label().getText(formatProvider);
+
+    text.text(textValue);
     text.style(flatSettings);
     text.prepareComplexity();
     text.applySettings();
@@ -154,8 +165,15 @@ anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
 
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
+    var settings = this.settings_[i];
+
+    // TODO: Check container invalidation state
     arrow.container(this.arrowsLayer_);
-    arrow.draw(this.settings_[i]);
+
+    arrow.clear();
+    if (settings.isCorrect) {
+      arrow.draw(settings);
+    }
   }
 };
 
