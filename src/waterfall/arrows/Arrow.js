@@ -152,7 +152,7 @@ anychart.waterfallModule.Arrow.prototype.label = function(opt_value) {
   if (!this.labelsSettings_) {
     this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
 
-    this.labelsSettings_.addThemes('defaultFontSettings');
+    this.labelsSettings_.addThemes('defaultFontSettings', 'waterfall.arrow.label');
 
     this.labelsSettings_.listenSignals(this.labelsSettingsInvalidated_, this);
   }

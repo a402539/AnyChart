@@ -633,6 +633,40 @@ anychart.waterfallModule.Chart.prototype.getFormatProviderForConnectorLabel = fu
 
 
 /**
+ * Returns format provider for connector.
+ *
+ * @param {number} index - Index of the point connector goes to.
+ * @param {number} previousIndex - Index of the point connector goes out of.
+ *
+ * @return {anychart.core.BaseContext}
+ */
+anychart.waterfallModule.Chart.prototype.getFormatProviderForArrow = function(toIndex, fromIndex) {
+  var provider = this.getContext_();
+
+  provider.statisticsSources([this]);
+
+  var from = this.getStackSum(fromIndex, 'absolute');
+  var to = this.getStackSum(toIndex, 'absolute');
+
+  var diff = to - from;
+
+  var values = {
+    'value': {value: diff, type: anychart.enums.TokenType.NUMBER},
+    'absolute': {
+      value: diff,
+      type: anychart.enums.TokenType.NUMBER
+    },
+    'percent': {
+      value: from == 0 ? '-' : diff / from,
+      type: from == 0 ? anychart.enums.TokenType.STRING : anychart.enums.TokenType.PERCENT
+    }
+  };
+
+  return provider.propagate(values);
+};
+
+
+/**
  * Draws connectors labels.
  */
 anychart.waterfallModule.Chart.prototype.updateConnectorsLabels = function() {

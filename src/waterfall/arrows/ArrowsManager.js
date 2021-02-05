@@ -55,7 +55,6 @@ anychart.waterfallModule.ArrowsManager.prototype.getArrowStackBounds_ = function
 
 anychart.waterfallModule.ArrowsManager.prototype.getArrowDrawInfo_ = function(arrow) {
   var settings = {};
-  this.heightCache_ = this.heightCache_;
   var heightCache = this.heightCache_;
   var isArrowUp = this.isArrowUp_(arrow);
   var stacksBounds = this.getArrowStackBounds_(arrow);
@@ -88,13 +87,11 @@ anychart.waterfallModule.ArrowsManager.prototype.getArrowDrawInfo_ = function(ar
       Math.min(fromStackBounds.getTop(), toStackBounds.getTop()) - arrowGap :
       Math.max(fromStackBounds.getBottom(), toStackBounds.getBottom()) + arrowGap;
 
-  if (!goog.isDef(heightCache[settings.from])) {
-    heightCache[settings.from] = settings.horizontalLineY;
-  }
-
-  if (settings.horizontalLineY == heightCache[settings.from]) {
-    settings.horizontalLineY += isArrowUp ? -arrowGap : arrowGap;
-    heightCache[settings.from] = settings.horizontalLineY;
+  if (!goog.isDef(heightCache[arrow.from()])) {
+    heightCache[arrow.from()] = settings.horizontalLineY;
+  } else {
+    settings.horizontalLineY = heightCache[arrow.from()] + (isArrowUp ? -arrowGap : arrowGap);
+    heightCache[arrow.from()] = settings.horizontalLineY;
   }
 
   return settings;
@@ -136,7 +133,15 @@ anychart.waterfallModule.ArrowsManager.prototype.applyLabelsStyle = function() {
     var flatSettings = arrow.label().flatten();
     var text = this.arrows_[i].getText();
 
-    var formatProvider = this.chart_.getFormatProviderForConnectorLabel(1, 0);
+    var from = arrow.getOption('from');
+    var to = arrow.getOption('to');
+
+    var xScale = this.chart_.xScale();
+  
+    var fromStackIndex = xScale.getIndexByValue(from);
+    var toStackIndex = xScale.getIndexByValue(to);
+
+    var formatProvider = this.chart_.getFormatProviderForArrow(toStackIndex, fromStackIndex);
     var textValue = arrow.label().getText(formatProvider);
 
     text.text(textValue);
@@ -152,16 +157,16 @@ anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
   var chart = this.chart_;
   var labelsLayer = this.getLabelsLayer();
   labelsLayer.parent(chart.rootElement);
-  labelsLayer.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
+  labelsLayer.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX + 1);
   
   if (!this.arrowsLayer_) {
     this.arrowsLayer_ = chart.rootElement.layer();
     this.arrowsLayer_.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
   }
 
-  this.applyLabelsStyle();
-
   this.calculateArrows_();
+
+  this.applyLabelsStyle();
 
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];

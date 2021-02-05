@@ -92,7 +92,7 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       'label': {
         'fontSize': '12px',
         'position': 'center',
-        'anchor': 'center'
+        'anchor': 'center-top'
       }
     }
   }
