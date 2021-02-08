@@ -8,9 +8,7 @@ goog.require('anychart.enums');
 goog.require('anychart.format.Context');
 goog.require('anychart.waterfallModule.Connectors');
 goog.require('anychart.waterfallModule.Series');
-goog.require('anychart.waterfallModule.TotalsStorage');
-goog.require('anychart.waterfallModule.Total');
-
+goog.require('anychart.waterfallModule.totals.Storage');
 
 
 /**
@@ -29,7 +27,7 @@ anychart.waterfallModule.Chart = function() {
 
   this.setType(anychart.enums.ChartTypes.WATERFALL);
 
-  this.totalsStorage = new anychart.waterfallModule.TotalsStorage(this);
+  this.totalsStorage = new anychart.waterfallModule.totals.Storage(this);
 
   /**
    * Contains pairs of coordinates, which represent start
@@ -89,7 +87,7 @@ anychart.waterfallModule.Chart.ZINDEX_CONNECTORS_LABELS = anychart.core.ChartWit
 anychart.waterfallModule.Chart.SUPPORTED_STATES = {
   CONNECTORS_LABELS: 'connectorsLabels',
   STACK_LABELS: 'stackLabels',
-  TOTALS: 'totals',
+  TOTALS: 'totals'
 };
 
 
@@ -226,11 +224,6 @@ anychart.waterfallModule.Chart.prototype.getConnectorXCoordinate = function(poin
 
   return pointMiddleX + (isDirectionNormal ? pointHalfWidth : -pointHalfWidth);
 };
-
-anychart.waterfallModule.Chart.prototype.drawTotals = function () {
-  this.totalsStorage.draw();
-  this.markStateConsistent(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS);
-}
 
 /** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.afterSeriesDraw = function() {
@@ -1238,39 +1231,67 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
 
 //endregion
 //region --- Totals
-anychart.waterfallModule.Chart.prototype.addTotal = function (total) {
+anychart.waterfallModule.Chart.prototype.addTotal = function(total) {
   return this.totalsStorage.addTotal(total);
-}
+};
 
-anychart.waterfallModule.Chart.prototype.removeTotal = function (totalToRemove) {
+anychart.waterfallModule.Chart.prototype.removeTotal = function(totalToRemove) {
   this.totalsStorage.removeTotal(totalToRemove);
   return this;
-}
+};
 
-anychart.waterfallModule.Chart.prototype.removeTotalAt = function (indexToRemove) {
+anychart.waterfallModule.Chart.prototype.removeTotalAt = function(indexToRemove) {
   this.totalsStorage.removeTotalAt(indexToRemove);
   return this;
-}
+};
 
-anychart.waterfallModule.Chart.prototype.getTotalAt = function (index) {
+anychart.waterfallModule.Chart.prototype.getTotalAt = function(index) {
   return this.totalsStorage.getTotalAt(index);
-}
+};
 
-anychart.waterfallModule.Chart.prototype.getAllTotals = function () {
+anychart.waterfallModule.Chart.prototype.getAllTotals = function() {
   return this.totalsStorage.getAllTotals();
-}
+};
 
-anychart.waterfallModule.Chart.prototype.totalsStorageInvalidated = function () {
+anychart.waterfallModule.Chart.prototype.totalsStorageInvalidated = function() {
   console.log('signal from total storage');
   this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS);
 
   var stateToInvalidate =
-      anychart.ConsistencyState.APPEARANCE | anychart.ConsistencyState.SERIES_DATA;
-  this.invalidate(stateToInvalidate, anychart.Signal.NEEDS_REDRAW);
-}
+    anychart.ConsistencyState.APPEARANCE |
+    anychart.ConsistencyState.SERIES_DATA |
+    anychart.ConsistencyState.SERIES_CHART_SERIES |
+    anychart.ConsistencyState.SCALE_CHART_SCALES |
+    anychart.ConsistencyState.SCALE_CHART_SCALE_MAPS |
+    anychart.ConsistencyState.SCALE_CHART_Y_SCALES |
+    anychart.ConsistencyState.SCALE_CHART_STATISTICS;
 
-anychart.waterfallModule.Chart.prototype.setupTotalsStorage_ = function () {
+  this.invalidate(stateToInvalidate, anychart.Signal.NEEDS_REDRAW);
+};
+
+anychart.waterfallModule.Chart.prototype.setupTotalsStorage_ = function() {
   this.totalsStorage.listenSignals(this.totalsStorageInvalidated, this);
+};
+
+anychart.waterfallModule.Chart.prototype.drawTotals = function() {
+  this.totalsStorage.draw();
+  this.markStateConsistent(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS);
+};
+
+anychart.waterfallModule.Chart.prototype.updateTotalsStorage = function() {
+  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS)) {
+    var seriesWithData = goog.array.filter(this.seriesList, function(series) {
+      return series && series.data();
+    });
+
+    var datasets = goog.array.map(seriesWithData, function(series) {
+      return series.data();
+    });
+
+    this.totalsStorage.setDatasets(datasets);
+
+    this.totalsStorage.calculate();
+  }
 };
 
 //endregion
@@ -1279,7 +1300,7 @@ anychart.waterfallModule.Chart.prototype.setupTotalsStorage_ = function () {
 /**
  * @inheritDoc
  */
-anychart.waterfallModule.Chart.prototype.getUsedXScales = function () {
+anychart.waterfallModule.Chart.prototype.getUsedXScales = function() {
   var scales = anychart.waterfallModule.Chart.base(this, 'getUsedXScales');
 
   var totalsStorageXScale = this.totalsStorage.getSeries().xScale();
@@ -1287,13 +1308,19 @@ anychart.waterfallModule.Chart.prototype.getUsedXScales = function () {
   scales[goog.getUid(totalsStorageXScale)] = totalsStorageXScale;
 
   return scales;
-}
+};
 
-
-anychart.waterfallModule.Chart.prototype.getDrawable = function () {
+anychart.waterfallModule.Chart.prototype.getDrawable = function() {
   var series = anychart.waterfallModule.Chart.base(this, 'getDrawable');
   return goog.array.concat([this.totalsStorage.getSeries()], series);
-}
+};
+
+anychart.waterfallModule.Chart.prototype.calculate = function() {
+  this.updateTotalsStorage();
+
+  anychart.waterfallModule.Chart.base(this, 'calculate');
+};
+
 //endregion
 //region --- setup/dispose
 /** @inheritDoc */
@@ -1340,28 +1367,6 @@ anychart.waterfallModule.Chart.prototype.disposeInternal = function() {
       this.connectors_
   );
   anychart.waterfallModule.Chart.base(this, 'disposeInternal');
-};
-
-anychart.waterfallModule.Chart.prototype.updateTotalsStorage = function (){
-  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS)) {
-    var seriesWithData = goog.array.filter(this.seriesList, function (series) {
-      return series && series.data();
-    });
-
-    var datasets = goog.array.map(seriesWithData, function (series) {
-      return series.data();
-    });
-
-    this.totalsStorage.setDatasets(datasets);
-
-    this.totalsStorage.calculate();
-  }
-}
-
-anychart.waterfallModule.Chart.prototype.calculate = function () {
-  this.updateTotalsStorage();
-
-  anychart.waterfallModule.Chart.base(this, 'calculate');
 };
 
 //endregion

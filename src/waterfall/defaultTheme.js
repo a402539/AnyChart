@@ -89,7 +89,12 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       }
     },
     'totals': {
-
+      'labels': {
+        'format': '{%value}!!',
+        'enabled': true
+      },
+      'fill': anychart.core.defaultTheme.waterfallTotalFill,
+      'stroke': anychart.core.defaultTheme.waterfallTotalStroke,
     }
   }
 });
