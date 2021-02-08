@@ -677,8 +677,9 @@ goog.addDependency('../../../../src/waterfall/Chart.js', ['anychart.waterfallMod
 goog.addDependency('../../../../src/waterfall/Connectors.js', ['anychart.waterfallModule.Connectors'], ['anychart.core.Base', 'anychart.core.settings.IObjectWithSettings', 'anychart.core.ui.LabelsFactory'], {});
 goog.addDependency('../../../../src/waterfall/Drawer.js', ['anychart.waterfallModule.Drawer'], ['anychart.core.drawers', 'anychart.core.drawers.Column', 'anychart.enums'], {});
 goog.addDependency('../../../../src/waterfall/Series.js', ['anychart.waterfallModule.Series'], ['anychart.core.series.Cartesian', 'anychart.core.settings', 'anychart.enums'], {});
-goog.addDependency('../../../../src/waterfall/arrows/Arrow.js', ['anychart.waterfallModule.Arrow'], ['anychart.core.ui.LabelsSettings', 'anychart.core.ui.OptimizedText'], {});
-goog.addDependency('../../../../src/waterfall/arrows/ArrowsManager.js', ['anychart.waterfallModule.ArrowsManager'], ['anychart.waterfallModule.Arrow'], {});
+goog.addDependency('../../../../src/waterfall/arrows/Arrow.js', ['anychart.waterfallModule.Arrow'], ['anychart.core.VisualBase', 'anychart.core.ui.LabelsSettings', 'anychart.core.ui.OptimizedText', 'anychart.math.Rect', 'anychart.waterfallModule.ArrowConnector'], {});
+goog.addDependency('../../../../src/waterfall/arrows/ArrowConnector.js', ['anychart.waterfallModule.ArrowConnector'], ['anychart.core.Base'], {});
+goog.addDependency('../../../../src/waterfall/arrows/ArrowsManager.js', ['anychart.waterfallModule.ArrowsManager'], ['anychart.core.Base', 'anychart.reflow.IMeasurementsTargetProvider', 'anychart.waterfallModule.Arrow'], {});
 goog.addDependency('../../../../src/waterfall/defaultTheme.js', ['anychart.waterfallModule.defaultTheme'], ['anychart.core.defaultTheme'], {});
 goog.addDependency('../../../../src/waterfall/waterfall.module.js', ['anychart.waterfallModule.entry'], ['anychart.waterfallModule.Chart', 'anychart.waterfallModule.Drawer'], {});
 goog.addDependency('../../../../src/wordtree/Chart.js', ['anychart.wordtreeModule.Chart'], ['acgraph.vector.Path', 'acgraph.vector.Text', 'anychart.core.Chart', 'anychart.format.Context', 'anychart.treeDataModule.Tree', 'anychart.wordtreeModule.Connectors'], {});

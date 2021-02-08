@@ -1,5 +1,7 @@
 goog.provide('anychart.waterfallModule.ArrowsManager');
 
+goog.require('anychart.core.Base');
+goog.require('anychart.reflow.IMeasurementsTargetProvider');
 goog.require('anychart.waterfallModule.Arrow');
 
 
@@ -153,7 +155,6 @@ anychart.waterfallModule.ArrowsManager.prototype.applyLabelsStyle = function() {
 
 
 anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
-  console.log('Arrows manager draw()');
   var chart = this.chart_;
   var labelsLayer = this.getLabelsLayer();
   labelsLayer.parent(chart.rootElement);
@@ -184,11 +185,10 @@ anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
 
 
 anychart.waterfallModule.ArrowsManager.prototype.removeArrow = function(arrow) {
-  var indexToDelete = this.arrows_.indexOf(arrow);
+  var indexToDelete = goog.array.indexOf(this.arrows_, arrow);
+
   if (indexToDelete >= 0) {
-    this.arrows_.splice(indexToDelete, 1);
-    goog.dispose(arrow);
-    return true;
+    return this.removeArrowAt(indexToDelete);
   }
   return false;
 };
@@ -229,7 +229,6 @@ anychart.waterfallModule.ArrowsManager.prototype.getAllArrows = function() {
 
 
 anychart.waterfallModule.ArrowsManager.prototype.arrowInvalidationHandler_ = function() {
-  console.log('Arrow invalidated');
   this.dispatchSignal(
     anychart.Signal.NEEDS_REDRAW |
     anychart.Signal.MEASURE_BOUNDS |
@@ -251,9 +250,19 @@ anychart.waterfallModule.ArrowsManager.prototype.getLabelsLayer = function() {
 };
 
 
+/** @inheritDoc */
+anychart.waterfallModule.ArrowsManager.prototype.disposeInternal = function() {
+  goog.disposeAll(
+    this.arrows_,
+    this.arrowsLayer_,
+    this.labelsLayer_
+  );
+  anychart.waterfallModule.ArrowsManager.base(this, 'disposeInternal');
+};
+
+
 //region --- IMeasurementsTargetProvider
 anychart.waterfallModule.ArrowsManager.prototype.provideMeasurements = function() {
-  console.log('Arrows manager is providing measurements');
   var labels = [];
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];

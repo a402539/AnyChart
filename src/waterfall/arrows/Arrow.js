@@ -1,7 +1,11 @@
 goog.provide('anychart.waterfallModule.Arrow');
 
+goog.require('anychart.core.VisualBase');
 goog.require('anychart.core.ui.LabelsSettings');
 goog.require('anychart.core.ui.OptimizedText');
+goog.require('anychart.math.Rect');
+goog.require('anychart.waterfallModule.ArrowConnector');
+
 
 /**
  * Arrow 
@@ -18,11 +22,14 @@ anychart.waterfallModule.Arrow = function(manager) {
   anychart.core.settings.createDescriptorsMeta(
     this.descriptorsMeta,
     [
-      ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
+      // ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
       ['from', 0, anychart.Signal.NEEDS_REDRAW],
       ['to', 0, anychart.Signal.NEEDS_REDRAW]
     ]
-);
+  );
+
+  // TODO: handle stroke
+  this.connector_ = new anychart.waterfallModule.ArrowConnector();
 };
 goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
 
@@ -37,7 +44,7 @@ anychart.waterfallModule.Arrow.OWN_DESCRIPTORS = (function() {
   var map = {};
 
   anychart.core.settings.createDescriptors(map, [
-    [anychart.enums.PropertyHandlerType.MULTI_ARG, 'stroke', anychart.core.settings.strokeNormalizer],
+    // [anychart.enums.PropertyHandlerType.MULTI_ARG, 'stroke', anychart.core.settings.strokeNormalizer],
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'from', anychart.core.settings.asIsNormalizer],
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'to', anychart.core.settings.asIsNormalizer]
   ]);
@@ -76,13 +83,12 @@ anychart.waterfallModule.Arrow.prototype.getArrowPath = function() {
 
 
 anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
-  console.log('Arrow drawConnector()');
-
   var path = this.getArrowPath();
   path.clear();
   path.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
 
-  var stroke = this.getOption('stroke');
+  var stroke = this.connector().getOption('stroke');
+
   path.stroke(stroke);
   path.moveTo(
     settings.startPoint.x,
@@ -120,7 +126,6 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
 
 
 anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
-  console.log('Arrow drawLabel()');
   var text = this.getText();
   text.renderTo(this.arrowsManager_.labelsLayerEl_);
   text.putAt(
@@ -136,7 +141,6 @@ anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
 
 
 anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
-  console.log('Arrow draw()');
   this.drawConnector(settings);
   this.drawLabel(settings);
 };
@@ -148,6 +152,10 @@ anychart.waterfallModule.Arrow.prototype.clear = function() {
 }
 
 
+/**
+ * 
+ * @param {Object=} opt_value 
+ */
 anychart.waterfallModule.Arrow.prototype.label = function(opt_value) {
   if (!this.labelsSettings_) {
     this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
@@ -206,6 +214,21 @@ anychart.waterfallModule.Arrow.prototype.getText = function() {
 };
 
 
+anychart.waterfallModule.Arrow.prototype.connector = function() {
+  return this.connector_;
+};
+
+
+/** @inheritDoc */
+anychart.waterfallModule.Arrow.prototype.disposeInternal = function() {
+  goog.disposeAll(
+    this.arrowPath_,
+    this.text_
+  );
+  anychart.waterfallModule.Arrow.base(this, 'disposeInternal');
+};
+
+
 //region --- exports
 /**
  * @suppress {deprecated}
@@ -213,6 +236,7 @@ anychart.waterfallModule.Arrow.prototype.getText = function() {
 (function() {
   var proto = anychart.waterfallModule.Arrow.prototype;
 
+  proto['connector'] = proto.connector;
   proto['label'] = proto.label;
 })();
 //endregion

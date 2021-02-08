@@ -194,7 +194,6 @@ anychart.waterfallModule.Chart.prototype.postProcessStacking = function(drawingP
 /** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.drawContent = function(contentBounds) {
   anychart.waterfallModule.Chart.base(this, 'drawContent', contentBounds);
-  console.log('Waterfall chart drawContent()');
 
   this.drawLabels();
   
@@ -635,8 +634,8 @@ anychart.waterfallModule.Chart.prototype.getFormatProviderForConnectorLabel = fu
 /**
  * Returns format provider for connector.
  *
- * @param {number} index - Index of the point connector goes to.
- * @param {number} previousIndex - Index of the point connector goes out of.
+ * @param {number} toIndex - Index of the point connector goes to.
+ * @param {number} fromIndex - Index of the point connector goes out of.
  *
  * @return {anychart.core.BaseContext}
  */
@@ -1297,7 +1296,6 @@ anychart.waterfallModule.Chart.prototype.arrows = function() {
 
 
 anychart.waterfallModule.Chart.prototype.arrowsInvalidationHandler_ = function() {
-  console.log('Arrows invalidation handler');
   this.invalidateState(
     anychart.enums.Store.WATERFALL,
     anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS,
@@ -1427,6 +1425,10 @@ anychart.waterfallModule.Chart.prototype.disposeInternal = function() {
   proto['data'] = proto.data;
   proto['connectors'] = proto.connectors;
   proto['addArrow'] = proto.addArrow;
+  proto['getArrow'] = proto.getArrow;
+  proto['removeArrowAt'] = proto.removeArrowAt;
+  proto['removeArrow'] = proto.removeArrow;
+  proto['getAllArrows'] = proto.getAllArrows;
   // deprecated
   proto['connectorStroke'] = proto.connectorStroke;
 })();
