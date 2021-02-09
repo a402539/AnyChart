@@ -62,7 +62,19 @@ anychart.waterfallModule.Chart = function() {
   this.usedContextsPool_ = [];
 
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, [
-    ['dataMode', anychart.ConsistencyState.SERIES_CHART_SERIES | anychart.ConsistencyState.SCALE_CHART_SCALES | anychart.ConsistencyState.SCALE_CHART_Y_SCALES, anychart.Signal.NEEDS_REDRAW]
+    ['dataMode',
+      anychart.ConsistencyState.SERIES_CHART_SERIES |
+      anychart.ConsistencyState.SCALE_CHART_SCALES |
+      anychart.ConsistencyState.SCALE_CHART_Y_SCALES,
+      anychart.Signal.NEEDS_REDRAW,
+      void 0,
+      /**
+       * @this {anychart.waterfallModule.Chart}
+       */
+      function() {
+        this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS);
+      }
+    ]
   ]);
 
   this.setupTotalsStorage_();
@@ -1290,7 +1302,7 @@ anychart.waterfallModule.Chart.prototype.updateTotalsStorage = function() {
 
     this.totalsStorage.setDatasets(datasets);
 
-    this.totalsStorage.calculate();
+    this.totalsStorage.calculate(this.getOption('dataMode'));
   }
 };
 

@@ -1,6 +1,7 @@
 goog.provide('anychart.waterfallModule.totals.Series');
 
 goog.require('anychart.core.series.Cartesian');
+goog.require('anychart.waterfallModule.totals.ShapeManager');
 
 /**
  * Series that draw total points.
@@ -13,7 +14,7 @@ anychart.waterfallModule.totals.Series = function(chart) {
   anychart.waterfallModule.totals.Series.base(this, 'constructor', chart, chart, 'totals', this.getSeriesConfig(), false);
   this.addThemes('waterfall.totals');
 
-  this.zIndex(1000);
+  this.zIndex(anychart.core.ChartWithSeries.ZINDEX_SERIES);
 };
 goog.inherits(anychart.waterfallModule.totals.Series, anychart.core.series.Cartesian);
 
@@ -28,12 +29,16 @@ anychart.waterfallModule.totals.Series.prototype.selectPoint = function(indexOrI
   return this;
 };
 
+/** @inheritDoc */
+anychart.waterfallModule.totals.Series.prototype.getShapeManager = function() {
+  return anychart.waterfallModule.totals.ShapeManager;
+};
+
 anychart.waterfallModule.totals.Series.prototype.getSeriesConfig = function() {
   var capabilities = (
     anychart.core.series.Capabilities.ALLOW_INTERACTIVITY |
     anychart.core.series.Capabilities.ALLOW_POINT_SETTINGS |
-    anychart.core.series.Capabilities.SUPPORTS_MARKERS |
-    anychart.core.series.Capabilities.SUPPORTS_LABELS | 0);
+    anychart.core.series.Capabilities.SUPPORTS_LABELS);
 
   return {
     drawerType: anychart.enums.SeriesDrawerTypes.COLUMN,

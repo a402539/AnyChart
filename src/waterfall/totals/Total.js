@@ -2,18 +2,16 @@ goog.provide('anychart.waterfallModule.totals.Total');
 
 goog.require('anychart.core.Base');
 goog.require('anychart.core.settings.IObjectWithSettings');
-goog.require('anychart.core.ui.LabelsFactory');
+goog.require('anychart.core.ui.LabelsSettings');
 
 /**
  * Waterfall Total settings.
  *
- * @param {anychart.waterfallModule.Chart} chart - Chart instance.
  * @constructor
  * @extends {anychart.core.Base}
  */
-anychart.waterfallModule.totals.Total = function(chart) {
+anychart.waterfallModule.totals.Total = function() {
   anychart.waterfallModule.totals.Total.base(this, 'constructor');
-  this.chart_ = chart;
   this.addThemes('waterfall.totals');
 
   var meta = [
@@ -36,7 +34,7 @@ anychart.waterfallModule.totals.Total.PROPERTY_DESCRIPTORS = (function() {
     anychart.core.settings.descriptors.FILL,
     anychart.core.settings.descriptors.HATCH_FILL,
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'category', anychart.core.settings.stringNormalizer],
-    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'name', anychart.core.settings.stringNormalizer],
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'name', anychart.core.settings.stringNormalizer]
   ]);
 
   return map;
@@ -56,7 +54,7 @@ anychart.waterfallModule.totals.Total.prototype.calculate = function(values) {
     }, 0);
   }, 0);
 
-  var labelSettings = this.labels().flatten();
+//  var labelSettings = this.labels().flatten();
 
   return [
     {
@@ -65,8 +63,9 @@ anychart.waterfallModule.totals.Total.prototype.calculate = function(values) {
       stroke: this.getOption('stroke'),
       name: this.getOption('name'),
       hatchFill: this.getOption('hatchFill'),
-      label: labelSettings,
-      value: totalValue
+     // label: labelSettings,
+      value: totalValue,
+      totalInstance: this
     }
   ];
 };
@@ -101,6 +100,19 @@ anychart.waterfallModule.totals.Total.prototype.labels = function(opt_config) {
   return this.labelsSettings_;
 };
 
+anychart.waterfallModule.totals.Total.prototype.tooltip = function(opt_value) {
+  if (!this.tooltip_) {
+    this.tooltip_ = new anychart.core.ui.Tooltip(0);
+    this.tooltip_.dropThemes();
+    this.setupCreated('tooltip', this.tooltip_);
+  }
+  if (goog.isDef(opt_value)) {
+    this.tooltip_.setup(opt_value);
+    return this;
+  } else {
+    return this.tooltip_;
+  }
+};
 
 //region --- Serialization
 anychart.waterfallModule.totals.Total.prototype.serialize = function() {

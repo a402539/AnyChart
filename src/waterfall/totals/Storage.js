@@ -7,22 +7,54 @@ goog.require('anychart.waterfallModule.totals.Total');
 
 
 /**
+ * Class that creates, removes and store created totals.
+ *
+ * @param {anychart.waterfallModule.Chart} chart - Instance of watefall chart.
  * @constructor
  * @extends {anychart.core.Base}
  */
 anychart.waterfallModule.totals.Storage = function(chart) {
   anychart.waterfallModule.totals.Storage.base(this, 'constructor');
+
+  /**
+   * Instance of watefall chart.
+   *
+   * @private
+   */
   this.chart_ = chart;
 
+  /**
+   * Series that used to draw total values.
+   *
+   * @type {anychart.waterfallModule.totals.Series}
+   * @private
+   */
   this.series_ = new anychart.waterfallModule.totals.Series(chart);
 
+  /**
+   * Array with created totals.
+   *
+   * @type {Array.<anychart.waterfallModule.totals.Total>}
+   * @private
+   */
   this.totals_ = [];
+
+  /**
+   * Datasets of all waterfall series.
+   *
+   * @type {Array.<anychart.data.Set>}
+   * @private
+   */
   this.datasets_ = [];
 
   this.setupSeries();
 };
 goog.inherits(anychart.waterfallModule.totals.Storage, anychart.core.Base);
 
+/**
+ * Supported signals.
+ * @type {anychart.Signal|number}
+ */
 anychart.waterfallModule.totals.Storage.prototype.SUPPORTED_SIGNALS = anychart.Signal.NEEDS_REDRAW_APPEARANCE;
 
 /**
@@ -48,9 +80,9 @@ anychart.waterfallModule.totals.Storage.prototype.getSeries = function() {
   return this.series_;
 };
 
-anychart.waterfallModule.totals.Storage.prototype.prepareData = function() {
+anychart.waterfallModule.totals.Storage.prototype.combineDatasets = function() {
   var data = {};
-  goog.array.forEach(this.datasets_, function(dataset) {
+  goog.array.forEach(this.datasets_, function(dataset, index) {
     var iterator = dataset.getIterator();
     while (iterator.advance()) {
       var x = iterator.get('x');
@@ -62,11 +94,21 @@ anychart.waterfallModule.totals.Storage.prototype.prepareData = function() {
 
       data[x].push(value);
     }
+
+    var desiredLength = index + 1;
+    goog.object.forEach(data, function(values) {
+      if (values.length < desiredLength) {
+        values.push(0);
+      }
+    });
   });
 
+  var categories = goog.object.getKeys(data);
+  var values = goog.object.getValues(data);
+
   return {
-    categories: goog.object.getKeys(data),
-    values: goog.object.getValues(data)
+    categories: categories,
+    values: values
   };
 };
 
@@ -75,6 +117,14 @@ anychart.waterfallModule.totals.Storage.prototype.populateByTotal = function(dat
 };
 
 
+/**
+ *
+ * @param data
+ * @return {{
+ *   categories: Array.<string>,
+ *   values: Array.<Array.<number>>
+ * }} data - .
+ */
 anychart.waterfallModule.totals.Storage.prototype.populateByTotals = function(data) {
   var categories = data.categories;
   var values = data.values;
@@ -108,9 +158,39 @@ anychart.waterfallModule.totals.Storage.prototype.populateByTotals = function(da
   return finalValues;
 };
 
-anychart.waterfallModule.totals.Storage.prototype.calculate = function() {
-  var data = this.prepareData();
-  var seriesData = this.populateByTotals(data);
+anychart.waterfallModule.totals.Storage.prototype.modifyForAbsoluteMode = function(values) {
+  return goog.array.reduce(values, function(prev, categoryData, rowNo) {
+    if (rowNo) {
+      var row = goog.array.map(categoryData, function(value, index) {
+        return value - values[rowNo - 1][index];
+      });
+      prev.push(row);
+      return prev;
+    }
+    prev.push(values[rowNo]);
+    return prev;
+  }, []);
+};
+
+anychart.waterfallModule.totals.Storage.prototype.modifyForDataMode = function(data, mode) {
+  if (mode == anychart.enums.WaterfallDataMode.ABSOLUTE) {
+    var categories = data.categories;
+    var values = this.modifyForAbsoluteMode(data.values);
+
+    return {
+      categories: categories,
+      values: values
+    };
+  }
+
+  return data;
+};
+
+
+anychart.waterfallModule.totals.Storage.prototype.calculate = function(mode) {
+  var data = this.combineDatasets(mode);
+  var modifiedData = this.modifyForDataMode(data, mode);
+  var seriesData = this.populateByTotals(modifiedData);
 
   this.series_.data(seriesData);
 };
@@ -134,12 +214,21 @@ anychart.waterfallModule.totals.Storage.prototype.totalInvalidated = function() 
   this.dispatchSignal(anychart.Signal.NEEDS_REDRAW_APPEARANCE);
 };
 
+/**
+ * Setup series.
+ */
 anychart.waterfallModule.totals.Storage.prototype.setupSeries = function() {
   this.series_.setParentEventTarget(this.chart_);
 };
 
-//region --- Public API
 
+//region --- Public API
+/**
+ * Create, setup and return instance of total.
+ * @param {{}} config - Configuration object for total.
+ *
+ * @return {anychart.waterfallModule.totals.Total}
+ */
 anychart.waterfallModule.totals.Storage.prototype.createTotal = function(config) {
   var total = new anychart.waterfallModule.totals.Total();
   total.suspendSignalsDispatching();
@@ -156,7 +245,8 @@ anychart.waterfallModule.totals.Storage.prototype.createTotal = function(config)
  *
  * @param {{
  *
- * }} totalConfig - Configuration object for total.
+ * }} totalConfig - Configuration object for total
+ * .
  *
  * @return {anychart.waterfallModule.totals.Total} - Total instance.
  */

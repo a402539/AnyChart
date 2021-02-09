@@ -90,8 +90,12 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
     },
     'totals': {
       'labels': {
-        'format': '{%value}!!',
+        'format': '{%value}',
         'enabled': true
+      },
+      'tooltip': {
+        'enabled': true,
+        'format': 'custom'
       },
       'fill': anychart.core.defaultTheme.waterfallTotalFill,
       'stroke': anychart.core.defaultTheme.waterfallTotalStroke,

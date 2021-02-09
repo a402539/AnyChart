@@ -678,7 +678,8 @@ goog.addDependency('../../../../src/waterfall/Connectors.js', ['anychart.waterfa
 goog.addDependency('../../../../src/waterfall/Drawer.js', ['anychart.waterfallModule.Drawer'], ['anychart.core.drawers', 'anychart.core.drawers.Column', 'anychart.enums'], {});
 goog.addDependency('../../../../src/waterfall/Series.js', ['anychart.waterfallModule.Series'], ['anychart.core.series.Cartesian', 'anychart.core.settings', 'anychart.enums'], {});
 goog.addDependency('../../../../src/waterfall/defaultTheme.js', ['anychart.waterfallModule.defaultTheme'], ['anychart.core.defaultTheme'], {});
-goog.addDependency('../../../../src/waterfall/totals/Series.js', ['anychart.waterfallModule.totals.Series'], ['anychart.core.series.Cartesian'], {});
+goog.addDependency('../../../../src/waterfall/totals/Series.js', ['anychart.waterfallModule.totals.Series'], ['anychart.core.series.Cartesian', 'anychart.waterfallModule.totals.ShapeManager'], {});
+goog.addDependency('../../../../src/waterfall/totals/ShapeManager.js', ['anychart.waterfallModule.totals.ShapeManager'], ['anychart.core.shapeManagers.PerPoint'], {});
 goog.addDependency('../../../../src/waterfall/totals/Storage.js', ['anychart.waterfallModule.totals.Storage'], ['anychart.core.Base', 'anychart.scales.Ordinal', 'anychart.waterfallModule.totals.Series', 'anychart.waterfallModule.totals.Total'], {});
 goog.addDependency('../../../../src/waterfall/totals/Total.js', ['anychart.waterfallModule.totals.Total'], ['anychart.core.Base', 'anychart.core.settings.IObjectWithSettings', 'anychart.core.ui.LabelsFactory'], {});
 goog.addDependency('../../../../src/waterfall/waterfall.module.js', ['anychart.waterfallModule.entry'], ['anychart.waterfallModule.Chart', 'anychart.waterfallModule.Drawer'], {});

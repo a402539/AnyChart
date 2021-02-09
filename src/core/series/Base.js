@@ -713,15 +713,22 @@ anychart.core.series.Base.prototype.applyConfig = function(config, opt_reapplyCl
   this.setupAutoZIndex();
 };
 
+/**
+ * Returns shape manager constructor.
+ * @returns {Function}
+ */
+anychart.core.series.Base.prototype.getShapeManager = function() {
+  return (this.config.shapeManagerType == anychart.enums.ShapeManagerTypes.PER_POINT) ?
+    anychart.core.shapeManagers.PerPoint :
+    anychart.core.shapeManagers.PerSeries;
+};
 
 /**
  * Recreates shape manager.
  */
 anychart.core.series.Base.prototype.recreateShapeManager = function() {
   goog.dispose(this.shapeManager);
-  var smc = (this.config.shapeManagerType == anychart.enums.ShapeManagerTypes.PER_POINT) ?
-      anychart.core.shapeManagers.PerPoint :
-      anychart.core.shapeManagers.PerSeries;
+  var smc = this.getShapeManager();
   this.shapeManager = /** @type {!anychart.core.shapeManagers.Base} */ (new smc(
       this,
       this.renderingSettings_.getShapesConfig(),
@@ -1942,6 +1949,7 @@ anychart.core.series.Base.prototype.colorScaleInvalidated_ = function(event) {
  * @return {!anychart.format.Context}
  */
 anychart.core.series.Base.prototype.getPointProvider = function() {
+  debugger
   if (!this.pointProvider_)
     this.pointProvider_ = new anychart.format.Context();
 
