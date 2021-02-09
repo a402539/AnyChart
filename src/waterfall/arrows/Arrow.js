@@ -35,6 +35,17 @@ goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
 
 
 /**
+ * @typedef {{
+  *   fromPoint: anychart.math.Point2D,
+  *   toPoint: anychart.math.Point2D,
+  *   horizontalY: number,
+  *   isCorrect: boolean
+  * }}
+  */
+ anychart.waterfallModule.Arrow.DrawSettings;
+
+
+/**
  * Connectors properties.
  *
  * @type {!Object.<string, anychart.core.settings.PropertyDescriptor>}
@@ -149,7 +160,7 @@ anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
 anychart.waterfallModule.Arrow.prototype.clear = function() {
   this.getText().renderTo(null);
   this.getArrowPath().clear();
-}
+};
 
 
 /**
@@ -221,9 +232,12 @@ anychart.waterfallModule.Arrow.prototype.connector = function() {
 
 /** @inheritDoc */
 anychart.waterfallModule.Arrow.prototype.disposeInternal = function() {
+  this.arrowsManager_ = null;
+
   goog.disposeAll(
     this.arrowPath_,
-    this.text_
+    this.text_,
+    this.connector_
   );
   anychart.waterfallModule.Arrow.base(this, 'disposeInternal');
 };

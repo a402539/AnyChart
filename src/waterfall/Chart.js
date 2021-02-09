@@ -1068,6 +1068,11 @@ anychart.waterfallModule.Chart.prototype.getStackBounds = function(index) {
 };
 
 
+anychart.waterfallModule.Chart.prototype.getStacksCount = function() {
+  return this.drawingPlans[0].data.length;
+}
+
+
 /**
  * Returns sum of stack values with given meta field name.
  *
@@ -1370,7 +1375,8 @@ anychart.waterfallModule.Chart.prototype.disposeInternal = function() {
       this.stackLabelsLayer_,
       this.connectorPath_,
       this.connectorsLabelsLayer_,
-      this.connectors_
+      this.connectors_,
+      this.arrowsManager_
   );
   anychart.waterfallModule.Chart.base(this, 'disposeInternal');
 };
