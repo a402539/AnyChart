@@ -39,7 +39,8 @@ goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
   *   fromPoint: anychart.math.Point2D,
   *   toPoint: anychart.math.Point2D,
   *   horizontalY: number,
-  *   isCorrect: boolean
+  *   isCorrect: boolean,
+  *   isUp: boolean
   * }}
   */
  anychart.waterfallModule.Arrow.DrawSettings;
@@ -93,6 +94,15 @@ anychart.waterfallModule.Arrow.prototype.getArrowPath = function() {
 };
 
 
+anychart.waterfallModule.Arrow.prototype.getArrowHeadPath = function() {
+  if (!goog.isDef(this.arrowHeadPath_)) {
+    this.arrowHeadPath_ = this.container().path();
+  }
+
+  return this.arrowHeadPath_;
+};
+
+
 anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   var path = this.getArrowPath();
   path.clear();
@@ -119,20 +129,28 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   );
 
   // Arrow head.
-  var isArrowUp = (settings.fromPoint.y - settings.horizontalY) >= 0;
-  var arrowHeadYDelta = isArrowUp ? -10 : 10;
-  path.lineTo(
-    settings.toPoint.x - 5,
-    settings.toPoint.y + arrowHeadYDelta
-  );
-  path.lineTo(
-    settings.toPoint.x + 5,
-    settings.toPoint.y + arrowHeadYDelta
-  );
-  path.lineTo(
+  var arrowHeadPath = this.getArrowHeadPath();
+  var isArrowUp = settings.isUp;
+  var arrowHeadSize = 10;
+  var arrowHeadYDelta = isArrowUp ? -arrowHeadSize : arrowHeadSize;
+  arrowHeadPath.moveTo(
     settings.toPoint.x,
     settings.toPoint.y
   );
+  arrowHeadPath.lineTo(
+    settings.toPoint.x - (arrowHeadSize / 2),
+    settings.toPoint.y + arrowHeadYDelta
+  );
+  arrowHeadPath.lineTo(
+    settings.toPoint.x + (arrowHeadSize / 2),
+    settings.toPoint.y + arrowHeadYDelta
+  );
+  arrowHeadPath.lineTo(
+    settings.toPoint.x,
+    settings.toPoint.y
+  );
+  arrowHeadPath.fill(stroke);
+  arrowHeadPath.stroke('none');
 };
 
 
@@ -151,9 +169,19 @@ anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
 };
 
 
+anychart.waterfallModule.Arrow.prototype.clear = function() {
+  this.getText().renderTo(null);
+  this.getArrowPath().clear();
+}
+
+
 anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
-  this.drawConnector(settings);
-  this.drawLabel(settings);
+  this.clear();
+
+  if (settings.isCorrect) {
+    this.drawConnector(settings);
+    this.drawLabel(settings);
+  }
 };
 
 
@@ -200,6 +228,7 @@ anychart.waterfallModule.Arrow.prototype.setupByJSON = function(config, opt_defa
   anychart.waterfallModule.Arrow.base(this, 'setupByJSON', config, opt_default);
 
   this.label().setupInternal(!!opt_default, config['label']);
+  this.connector().setupInternal(!!opt_default, config['connector']);
 
   anychart.core.settings.deserialize(this, anychart.waterfallModule.Arrow.OWN_DESCRIPTORS, config, opt_default);
 };
@@ -211,6 +240,7 @@ anychart.waterfallModule.Arrow.prototype.serialize = function() {
   anychart.core.settings.serialize(this, anychart.waterfallModule.Arrow.OWN_DESCRIPTORS, json, void 0, void 0, true);
 
   json['label'] = this.label().serialize();
+  json['connector'] = this.connector().serialize();
 
   return json;
 };
@@ -236,6 +266,7 @@ anychart.waterfallModule.Arrow.prototype.disposeInternal = function() {
 
   goog.disposeAll(
     this.arrowPath_,
+    this.arrowHeadPath_,
     this.text_,
     this.connector_
   );

@@ -89,7 +89,9 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       }
     },
     'arrow': {
-      'stroke': '#697474',
+      'connector': {
+        'stroke': '#697474'
+      },
       'label': {
         'fontSize': '12px',
         'position': 'center',

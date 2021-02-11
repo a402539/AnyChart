@@ -88,7 +88,8 @@ anychart.waterfallModule.ArrowsManager.prototype.createArrowDrawSettings = funct
     fromPoint: fromPoint,
     toPoint: toPoint,
     horizontalY: baseHorizontalY,
-    isCorrect: isCorrect
+    isCorrect: isCorrect,
+    isUp: isUp
   }
 };
 
@@ -96,11 +97,17 @@ anychart.waterfallModule.ArrowsManager.prototype.createArrowDrawSettings = funct
 anychart.waterfallModule.ArrowsManager.prototype.createArrowBounds = function(arrowDrawSettings, arrow) {
   var text = arrow.getText();
 
+  var strokeThickness = anychart.utils.extractThickness(arrow.connector().getOption('stroke'));
+
+  var gap = 2;
+  // Half of the resulting rect height. 
+  var halfSize = (strokeThickness / 2) + gap;
+
   var arrowBounds = new anychart.math.Rect(
       arrowDrawSettings.fromPoint.x,
-      arrowDrawSettings.fromPoint.y,
+      arrowDrawSettings.fromPoint.y - halfSize,
       arrowDrawSettings.toPoint.y - arrowDrawSettings.fromPoint.y,
-      0
+      halfSize * 2
     );
 
   // debugger;
@@ -119,6 +126,22 @@ anychart.waterfallModule.ArrowsManager.prototype.createArrowBounds = function(ar
   arrowBounds.boundingRect(textActualBounds);
 
   return arrowBounds;
+};
+
+
+anychart.waterfallModule.ArrowsManager.prototype.createArrowTextBounds = function(arrow, arrowBounds) {
+  var text = arrow.getText();
+  var textBounds = text.getBounds();
+
+  var textPosition = text.getTextPosition(arrowBounds, textBounds.height, arrow.label().position(), arrow.label().anchor());
+
+  var textActualBounds = new anychart.math.Rect(
+    textPosition.left,
+    textPosition.top,
+    textBounds.width,
+    textBounds.height
+  );
+  return textActualBounds;
 };
 
 
@@ -185,6 +208,19 @@ anychart.waterfallModule.ArrowsManager.prototype.getStacksBounds = function(opt_
 };
 
 
+anychart.waterfallModule.ArrowsManager.prototype.getIntersectionDelta = function(fixedBounds, freeBounds, isMovingUp) {
+  if (fixedBounds.intersects(freeBounds)) {
+    if (isMovingUp) {
+      return fixedBounds.getTop() - freeBounds.getBottom();
+    } else {
+      return fixedBounds.getBottom() - freeBounds.getTop();
+    }
+  }
+
+  return 0;
+};
+
+
 anychart.waterfallModule.ArrowsManager.prototype.fixArrowPosition = function(arrow, arrowDrawSettings, arrowsDrawSettings) {
   var stackBounds = this.getStacksBounds();
   var isUp = this.isArrowUp(arrow);
@@ -196,25 +232,39 @@ anychart.waterfallModule.ArrowsManager.prototype.fixArrowPosition = function(arr
   };
 
   var arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
+  var arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
 
   for (var i = 0; i < stackBounds.length; i++) {
     var sb = stackBounds[i];
+    console.log(this.getIntersectionDelta(sb, arrowBounds, isUp));
+    console.log(this.getIntersectionDelta(sb, arrowTextBounds, isUp));
     if (sb.intersects(arrowBounds)) {
       newDrawSettings.horizontalY = isUp ?
         sb.getTop() :
         sb.getBottom();
+
       arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
+      arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
     }
   }
 
   for (var i = 0; i < arrowsDrawSettings.length; i++) {
     var fixedDrawSettings = arrowsDrawSettings[i];
+    if (!fixedDrawSettings.isCorrect) {
+      continue;
+    }
     var fixedBounds = this.createArrowBounds(fixedDrawSettings, arrow);
+
+    console.log(this.getIntersectionDelta(fixedBounds, arrowBounds, isUp));
+    console.log(this.getIntersectionDelta(fixedBounds, arrowTextBounds, isUp));
+
     if (fixedBounds.intersects(arrowBounds)) {
       newDrawSettings.horizontalY += isUp ?
         fixedBounds.getTop() - arrowBounds.getBottom() :
         fixedBounds.getBottom() - arrowBounds.getTop();
-    arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
+
+      arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
+      arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
     }
   }
 
@@ -232,8 +282,11 @@ anychart.waterfallModule.ArrowsManager.prototype.createDrawSettings = function()
     const arrow = this.arrows_[i];
     
     const arrowDrawSettings = this.createArrowDrawSettings(arrow);
-    const fixedDrawSettings = this.fixArrowPosition(arrow, arrowDrawSettings, arrowsDrawSettings);
-    
+
+    const fixedDrawSettings = arrowDrawSettings.isCorrect ?
+      this.fixArrowPosition(arrow, arrowDrawSettings, arrowsDrawSettings) :
+      arrowDrawSettings;
+
     arrowsDrawSettings.push(fixedDrawSettings);
   }
   return arrowsDrawSettings;
