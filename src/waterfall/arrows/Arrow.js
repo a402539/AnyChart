@@ -102,36 +102,36 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
 
   path.stroke(stroke);
   path.moveTo(
-    settings.startPoint.x,
-    settings.startPoint.y
+    settings.fromPoint.x,
+    settings.fromPoint.y
   );
   path.lineTo(
-    settings.startPoint.x,
-    settings.horizontalLineY
+    settings.fromPoint.x,
+    settings.horizontalY
   );
   path.lineTo(
-    settings.endPoint.x,
-    settings.horizontalLineY
+    settings.toPoint.x,
+    settings.horizontalY
   );
   path.lineTo(
-    settings.endPoint.x,
-    settings.endPoint.y
+    settings.toPoint.x,
+    settings.toPoint.y
   );
 
   // Arrow head.
-  var isArrowUp = (settings.startPoint.y - settings.horizontalLineY) >= 0;
+  var isArrowUp = (settings.fromPoint.y - settings.horizontalY) >= 0;
   var arrowHeadYDelta = isArrowUp ? -10 : 10;
   path.lineTo(
-    settings.endPoint.x - 5,
-    settings.endPoint.y + arrowHeadYDelta
+    settings.toPoint.x - 5,
+    settings.toPoint.y + arrowHeadYDelta
   );
   path.lineTo(
-    settings.endPoint.x + 5,
-    settings.endPoint.y + arrowHeadYDelta
+    settings.toPoint.x + 5,
+    settings.toPoint.y + arrowHeadYDelta
   );
   path.lineTo(
-    settings.endPoint.x,
-    settings.endPoint.y
+    settings.toPoint.x,
+    settings.toPoint.y
   );
 };
 
@@ -141,9 +141,9 @@ anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
   text.renderTo(this.arrowsManager_.labelsLayerEl_);
   text.putAt(
     new anychart.math.Rect(
-      settings.startPoint.x,
-      settings.horizontalLineY,
-      settings.endPoint.x - settings.startPoint.x,
+      settings.fromPoint.x,
+      settings.horizontalY,
+      settings.toPoint.x - settings.fromPoint.x,
       0
     )
   );

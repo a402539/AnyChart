@@ -4,30 +4,6 @@ goog.require('anychart.core.Base');
 goog.require('anychart.reflow.IMeasurementsTargetProvider');
 goog.require('anychart.waterfallModule.Arrow');
 
-
-/**
- * Only start/end points are calculated here.
- * Horizontal line is calculated separately.
- */
-function createDrawSettings() {
-  const arrows = [];
-  const arrowsBounds = [];
-  for (let i = 0; i < arrowsCount; i++) {
-    const arrow = arrows[i];
-    const arrowBounds = createArrowBounds();
-    const arrowHorizontalPosition = pushPositionBounds([...stackBounds, ...stackLabelsBounds, ...arrowsBounds], arrowBounds);
-  }
-}
-
-/**
- * @returns {anychart.waterfallModule.Arrow.DrawSettings[]}
- */
-function getDrawInfo() {
-  const stackBounds = getStackBounds();
-  const stackLabelsBounds = getStackLabelsBounds();
-  const drawSettings = createDrawSettings(stackBounds, stackLabelsBounds);
-}
-
 /**
  * 
  * @constructor
@@ -58,119 +34,219 @@ anychart.waterfallModule.ArrowsManager.prototype.SUPPORTED_SIGNALS =
 anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX = 30;
 
 
-anychart.waterfallModule.ArrowsManager.prototype.getArrowStackBounds_ = function(arrow) {
-  var chart = this.chart_;
-  var xScale = chart.xScale();
-
-  var from = arrow.getOption('from');
-  var to = arrow.getOption('to');
-
-  var fromStackIndex = xScale.getIndexByValue(from);
-  var toStackIndex = xScale.getIndexByValue(to);
-
-  var fromStackBounds = anychart.utils.isNaN(fromStackIndex) ? null : chart.getStackBounds(fromStackIndex);
-  var toStackBounds = anychart.utils.isNaN(toStackIndex) ? null : chart.getStackBounds(toStackIndex);
-
-  return {
-    from: fromStackBounds,
-    to: toStackBounds
-  }
+anychart.waterfallModule.ArrowsManager.prototype.getIndexFromValue = function(value) {
+  return this.chart_.xScale().getIndexByValue(value);
 };
 
 
-anychart.waterfallModule.ArrowsManager.prototype.getArrowDrawInfo_ = function(arrow) {
-  var settings = {};
-  var heightCache = this.heightCache_;
-  var isArrowUp = this.isArrowUp_(arrow);
-  var stacksBounds = this.getArrowStackBounds_(arrow);
+anychart.waterfallModule.ArrowsManager.prototype.isArrowUp = function(arrow) {
+  var fromIndex = this.getIndexFromValue(arrow.from());
 
-  if (goog.isNull(stacksBounds.from) || goog.isNull(stacksBounds.to)) {
-    settings.isCorrect = false;
-    return settings
+  return this.chart_.getStackSum(fromIndex, 'diff') >= 0;
+};
+
+anychart.waterfallModule.ArrowsManager.prototype.createArrowDrawSettings = function(arrow, stackLabelsBounds) {
+  var fromIndex = this.getIndexFromValue(arrow.from());
+  var toIndex = this.getIndexFromValue(arrow.to());
+
+  var stackBounds = this.getStacksBounds();
+
+  // Minimal gap from start/end point to the horizontal line.
+  var minimalGap = 15;
+  
+  var isCorrect = !goog.isNull(fromStackBounds) &&
+    !goog.isNull(toStackBounds) &&
+    !isNaN(fromIndex) &&
+    !isNaN(toIndex);
+
+  if (!isCorrect) {
+    return {
+      isCorrect: false
+    };
   }
 
-  settings.isCorrect = true;
+  var isUp = this.chart_.getStackSum(fromIndex, 'diff') >= 0;
 
-  var fromStackBounds = stacksBounds.from;
-  var toStackBounds = stacksBounds.to;
+  var fromStackBounds = stackBounds[fromIndex];
+  var toStackBounds = stackBounds[toIndex];
 
-  var arrowStartPoint = new anychart.math.Point2D(
-    fromStackBounds.left + fromStackBounds.width / 2,
-    isArrowUp ? fromStackBounds.getTop() : fromStackBounds.getBottom()
+  var fromPoint = new anychart.math.Point2D(
+    fromStackBounds.getLeft() + fromStackBounds.getWidth() / 2,
+    isUp ? fromStackBounds.getTop() : fromStackBounds.getBottom()
   );
 
-  var arrowEndPoint = new anychart.math.Point2D(
-    toStackBounds.left + toStackBounds.width / 2,
-    isArrowUp ? toStackBounds.getTop() : toStackBounds.getBottom()
-  )
+  var toPoint = new anychart.math.Point2D(
+    toStackBounds.getLeft() + toStackBounds.getWidth() / 2,
+    isUp ? toStackBounds.getTop() : toStackBounds.getBottom()
+  );
 
-  settings.startPoint = arrowStartPoint;
-  settings.endPoint = arrowEndPoint;
+  var baseHorizontalY = isUp ?
+    (Math.min(fromPoint.y, toPoint.y) - minimalGap) :
+    (Math.max(fromPoint.y, toPoint.y) + minimalGap);
 
-  // var arrowGap = 20;
-  settings.horizontalLineY = 0;
-  // isArrowUp ?
-  //     Math.min(fromStackBounds.getTop(), toStackBounds.getTop()) - arrowGap :
-  //     Math.max(fromStackBounds.getBottom(), toStackBounds.getBottom()) + arrowGap;
-
-  // if (!goog.isDef(heightCache[arrow.from()])) {
-  //   heightCache[arrow.from()] = settings.horizontalLineY;
-  // } else {
-  //   settings.horizontalLineY = heightCache[arrow.from()] + (isArrowUp ? -arrowGap : arrowGap);
-  //   heightCache[arrow.from()] = settings.horizontalLineY;
-  // }
-
-  return settings;
+  return {
+    fromPoint: fromPoint,
+    toPoint: toPoint,
+    horizontalY: baseHorizontalY,
+    isCorrect: isCorrect
+  }
 };
 
 
-anychart.waterfallModule.ArrowsManager.prototype.isArrowUp_ = function(arrow) {
+anychart.waterfallModule.ArrowsManager.prototype.createArrowBounds = function(arrowDrawSettings, arrow) {
+  var text = arrow.getText();
+
+  var arrowBounds = new anychart.math.Rect(
+      arrowDrawSettings.fromPoint.x,
+      arrowDrawSettings.fromPoint.y,
+      arrowDrawSettings.toPoint.y - arrowDrawSettings.fromPoint.y,
+      0
+    );
+
+  // debugger;
+
+  var textBounds = text.getBounds();
+
+  var textPosition = text.getTextPosition(arrowBounds, textBounds.height, arrow.label().position(), arrow.label().anchor());
+
+  var textActualBounds = new anychart.math.Rect(
+    textPosition.left,
+    textPosition.top,
+    textBounds.width,
+    textBounds.height
+  );
+
+  arrowBounds.boundingRect(textActualBounds);
+
+  return arrowBounds;
+};
+
+
+anychart.waterfallModule.ArrowsManager.prototype.getAllSeriesLabelsBounds = function(index) {
+  var bounds = [];
   var chart = this.chart_;
-  var xScale = chart.xScale();
-  var from = arrow.getOption('from');
-  var fromStackIndex = xScale.getIndexByValue(from);
-  var fromStackDirection = chart.getStackSum(fromStackIndex, 'diff');
-  return fromStackDirection >= 0;
-};
-
-
-anychart.waterfallModule.ArrowsManager.prototype.getVisibleStacksBounds = function() {
-  var stacksBounds = [];
-  var stacksCount = this.chart_.getStacksCount();
-
-  for (var i = 0; i < stacksCount; i++) {
-    if (this.chart_.isStackVisible(i)) {
-      stacksBounds.push(this.chart_.getStackBounds(i));
+  var seriesCount = chart.getSeriesCount();
+  for (var i = 0; i < seriesCount; i++) {
+    var labelsFactory = chart.getSeries(i).labels();
+    var label = labelsFactory.getLabel(index);
+    if (label.enabled() || labelsFactory.enabled()) {
+      var labelBounds = label.bounds_;
+      bounds.push(labelBounds);
     }
   }
-
-  return stacksBounds;
+  return bounds;
 };
 
 
-anychart.waterfallModule.ArrowsManager.prototype.positionArrows = function() {
-  var stacksBounds = this.getVisibleStacksBounds();
-  var arrowsDrawSettings = [];
+anychart.waterfallModule.ArrowsManager.prototype.getSeriesLabelsBounds = function() {
+  var chart = this.chart_;
+  var seriesCount = chart.getSeriesCount();
+
+  var bounds = [];
+  var boundingRect = null;
+  for (var i = 0; i < chart.getStacksCount(); i++) {
+    var allBounds = this.getAllSeriesLabelsBounds(i);
+    boundingRect = goog.array.reduce(allBounds, function(accumulator, curValue) {
+      return goog.math.Rect.boundingRect(accumulator, curValue);
+    }, boundingRect);
+  }
+  return bounds;
+};
+
+
+anychart.waterfallModule.ArrowsManager.prototype.getStackFullBounds = function(index) {
+  var chart = this.chart_;
+  var bounds = chart.getStackBounds(index);
+  var seriesLabelsBounds = this.getAllSeriesLabelsBounds(index);
+
+  for (var i = 0; i < seriesLabelsBounds.length; i++) {
+    var labelBounds = seriesLabelsBounds[i];
+    bounds = goog.math.Rect.boundingRect(bounds, labelBounds);
+  }
+
+  return bounds;
 }
 
 
-anychart.waterfallModule.ArrowsManager.prototype.calculateArrows_ = function() {
-  var stacksBounds = this.getVisibleStacksBounds();
-  /**
-   * Stores arrows precalculated values.
-   * I.e. arrow start point, arrow end point, arrow horizontal line y value.
-   *
-   * @type {Array.<anychart.waterfallModule.Arrow.DrawSettings>}
-   */
-  this.settings_ = [];
-  this.heightCache_ = {};
-
-  for (var i = 0; i < this.arrows_.length; i++) {
-    var arrow = this.arrows_[i];
-    var settings = this.getArrowDrawInfo_(arrow);
-
-    this.settings_.push(settings);
+/**
+ * Returns not simple stack bounds, but bounds enlarged to
+ * include series labels.
+ *
+ * @param {boolean} opt_forceUpdate - Force recalculate stacks bounds.
+ */
+anychart.waterfallModule.ArrowsManager.prototype.getStacksBounds = function(opt_forceUpdate) {
+  if (!goog.isDef(this.stacksBounds_) || opt_forceUpdate) {
+    this.stacksBounds_ = [];
+    for (var i = 0; i < this.chart_.getStacksCount(); i++) {
+      this.stacksBounds_.push(this.getStackFullBounds(i));
+    }
   }
+  return this.stacksBounds_;
+};
+
+
+anychart.waterfallModule.ArrowsManager.prototype.fixArrowPosition = function(arrow, arrowDrawSettings, arrowsDrawSettings) {
+  var stackBounds = this.getStacksBounds();
+  var isUp = this.isArrowUp(arrow);
+  var newDrawSettings = {
+    fromPoint: arrowDrawSettings.fromPoint,
+    toPoint: arrowDrawSettings.toPoint,
+    horizontalY: arrowDrawSettings.horizontalY,
+    isCorrect: arrowDrawSettings.isCorrect
+  };
+
+  var arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
+
+  for (var i = 0; i < stackBounds.length; i++) {
+    var sb = stackBounds[i];
+    if (sb.intersects(arrowBounds)) {
+      newDrawSettings.horizontalY = isUp ?
+        sb.getTop() :
+        sb.getBottom();
+      arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
+    }
+  }
+
+  for (var i = 0; i < arrowsDrawSettings.length; i++) {
+    var fixedDrawSettings = arrowsDrawSettings[i];
+    var fixedBounds = this.createArrowBounds(fixedDrawSettings, arrow);
+    if (fixedBounds.intersects(arrowBounds)) {
+      newDrawSettings.horizontalY += isUp ?
+        fixedBounds.getTop() - arrowBounds.getBottom() :
+        fixedBounds.getBottom() - arrowBounds.getTop();
+    arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
+    }
+  }
+
+  return newDrawSettings;
+};
+
+
+/**
+ * Only start/end points are calculated here.
+ * Horizontal line is calculated separately.
+ */
+anychart.waterfallModule.ArrowsManager.prototype.createDrawSettings = function() {
+  const arrowsDrawSettings = [];
+  for (let i = 0; i < this.arrows_.length; i++) {
+    const arrow = this.arrows_[i];
+    
+    const arrowDrawSettings = this.createArrowDrawSettings(arrow);
+    const fixedDrawSettings = this.fixArrowPosition(arrow, arrowDrawSettings, arrowsDrawSettings);
+    
+    arrowsDrawSettings.push(fixedDrawSettings);
+  }
+  return arrowsDrawSettings;
+};
+
+
+/**
+ * @returns {anychart.waterfallModule.Arrow.DrawSettings[]}
+ */
+anychart.waterfallModule.ArrowsManager.prototype.getDrawInfo = function() {
+  this.getStacksBounds(true);
+  const drawSettings = this.createDrawSettings();
+  return drawSettings;
 };
 
 
@@ -213,21 +289,17 @@ anychart.waterfallModule.ArrowsManager.prototype.draw = function() {
   this.applyLabelsStyle();
 
   // We probably need arrows labels bounds, when calculating arrows positions.
-  this.dispatchSignal(anychart.Signal.MEASURE_BOUNDS);
+  this.dispatchSignal(anychart.Signal.MEASURE_BOUNDS | anychart.Signal.MEASURE_COLLECT);
 
-  this.calculateArrows_();
+  anychart.measuriator.measure();
 
-  for (var i = 0; i < this.arrows_.length; i++) {
+  var drawInfo = this.getDrawInfo();
+
+  for (var i = 0; i < drawInfo.length; i++) {
+    var di = drawInfo[i];
     var arrow = this.arrows_[i];
-    var settings = this.settings_[i];
-
-    // TODO: Check container invalidation state
     arrow.container(this.arrowsLayer_);
-
-    arrow.clear();
-    if (settings.isCorrect) {
-      arrow.draw(settings);
-    }
+    arrow.draw(di);
   }
 };
 
