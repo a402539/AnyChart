@@ -105,7 +105,7 @@ anychart.waterfallModule.ArrowsManager.prototype.createArrowBounds = function(ar
 
   var arrowBounds = new anychart.math.Rect(
       arrowDrawSettings.fromPoint.x,
-      arrowDrawSettings.fromPoint.y - halfSize,
+      arrowDrawSettings.horizontalY - halfSize,
       arrowDrawSettings.toPoint.y - arrowDrawSettings.fromPoint.y,
       halfSize * 2
     );
@@ -236,12 +236,11 @@ anychart.waterfallModule.ArrowsManager.prototype.fixArrowPosition = function(arr
 
   for (var i = 0; i < stackBounds.length; i++) {
     var sb = stackBounds[i];
-    console.log(this.getIntersectionDelta(sb, arrowBounds, isUp));
-    console.log(this.getIntersectionDelta(sb, arrowTextBounds, isUp));
-    if (sb.intersects(arrowBounds)) {
-      newDrawSettings.horizontalY = isUp ?
-        sb.getTop() :
-        sb.getBottom();
+
+    var delta = this.getIntersectionDelta(sb, arrowBounds, isUp);
+    if (delta !== 0) {
+      console.log(`Arrow: ${arrow.from()} ${arrow.to()}, delta: ${delta} with stack ${i}`)
+      newDrawSettings.horizontalY += delta;
 
       arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
       arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
@@ -255,13 +254,11 @@ anychart.waterfallModule.ArrowsManager.prototype.fixArrowPosition = function(arr
     }
     var fixedBounds = this.createArrowBounds(fixedDrawSettings, arrow);
 
-    console.log(this.getIntersectionDelta(fixedBounds, arrowBounds, isUp));
-    console.log(this.getIntersectionDelta(fixedBounds, arrowTextBounds, isUp));
+    var delta = this.getIntersectionDelta(fixedBounds, arrowBounds, isUp);
 
-    if (fixedBounds.intersects(arrowBounds)) {
-      newDrawSettings.horizontalY += isUp ?
-        fixedBounds.getTop() - arrowBounds.getBottom() :
-        fixedBounds.getBottom() - arrowBounds.getTop();
+    if (delta !== 0) {
+      console.log(`Arrow: ${arrow.from()} ${arrow.to()}, delta: ${delta} with arrow: ${this.arrows_[i].from()} ${this.arrows_[i].to()}`)
+      newDrawSettings.horizontalY += delta;
 
       arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
       arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
