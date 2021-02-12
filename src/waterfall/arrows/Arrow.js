@@ -105,7 +105,6 @@ anychart.waterfallModule.Arrow.prototype.getArrowHeadPath = function() {
 
 anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   var path = this.getArrowPath();
-  path.clear();
   path.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
 
   var stroke = this.connector().getOption('stroke');
@@ -172,6 +171,7 @@ anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
 anychart.waterfallModule.Arrow.prototype.clear = function() {
   this.getText().renderTo(null);
   this.getArrowPath().clear();
+  this.getArrowHeadPath().clear();
 }
 
 
@@ -182,12 +182,6 @@ anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
     this.drawConnector(settings);
     this.drawLabel(settings);
   }
-};
-
-
-anychart.waterfallModule.Arrow.prototype.clear = function() {
-  this.getText().renderTo(null);
-  this.getArrowPath().clear();
 };
 
 
