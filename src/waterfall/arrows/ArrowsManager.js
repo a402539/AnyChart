@@ -40,14 +40,14 @@ anychart.waterfallModule.ArrowsManager.prototype.getIndexFromValue = function(va
 
 
 anychart.waterfallModule.ArrowsManager.prototype.isArrowUp = function(arrow) {
-  var fromIndex = this.getIndexFromValue(arrow.from());
+  var fromIndex = this.getIndexFromValue(arrow.getOption('from'));
 
   return this.chart_.getStackSum(fromIndex, 'diff') >= 0;
 };
 
 anychart.waterfallModule.ArrowsManager.prototype.createArrowDrawSettings = function(arrow, stackLabelsBounds) {
-  var fromIndex = this.getIndexFromValue(arrow.from());
-  var toIndex = this.getIndexFromValue(arrow.to());
+  var fromIndex = this.getIndexFromValue(arrow.getOption('from'));
+  var toIndex = this.getIndexFromValue(arrow.getOption('to'));
 
   var stackBounds = this.getStacksBounds();
 
