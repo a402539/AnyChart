@@ -30,6 +30,7 @@ anychart.waterfallModule.Arrow = function(manager) {
 
   // TODO: handle stroke
   this.connector_ = new anychart.waterfallModule.ArrowConnector();
+  this.connector_.addThemes('waterfall.arrow.connector');
 };
 goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
 
@@ -108,23 +109,36 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   path.zIndex(anychart.waterfallModule.ArrowsManager.ARROWS_ZINDEX);
 
   var stroke = this.connector().getOption('stroke');
+  var thickness = anychart.utils.extractThickness(stroke);
+
+  var shiftedFromPoint = new anychart.math.Point2D(
+    anychart.utils.applyPixelShift(settings.fromPoint.x, thickness),
+    anychart.utils.applyPixelShift(settings.fromPoint.y, thickness)
+  );
+
+  var shiftedToPoint = new anychart.math.Point2D(
+    anychart.utils.applyPixelShift(settings.toPoint.x, thickness),
+    anychart.utils.applyPixelShift(settings.toPoint.y, thickness)
+  );
+
+  var shiftedHorizontalY = anychart.utils.applyPixelShift(settings.horizontalY, thickness);
 
   path.stroke(stroke);
   path.moveTo(
-    settings.fromPoint.x,
-    settings.fromPoint.y
+    shiftedFromPoint.x,
+    shiftedFromPoint.y
   );
   path.lineTo(
-    settings.fromPoint.x,
-    settings.horizontalY
+    shiftedFromPoint.x,
+    shiftedHorizontalY
   );
   path.lineTo(
-    settings.toPoint.x,
-    settings.horizontalY
+    shiftedToPoint.x,
+    shiftedHorizontalY
   );
   path.lineTo(
-    settings.toPoint.x,
-    settings.toPoint.y
+    shiftedToPoint.x,
+    shiftedToPoint.y
   );
 
   // Arrow head.
@@ -133,20 +147,20 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   var arrowHeadSize = 10;
   var arrowHeadYDelta = isArrowUp ? -arrowHeadSize : arrowHeadSize;
   arrowHeadPath.moveTo(
-    settings.toPoint.x,
-    settings.toPoint.y
+    shiftedToPoint.x,
+    shiftedToPoint.y
   );
   arrowHeadPath.lineTo(
-    settings.toPoint.x - (arrowHeadSize / 2),
-    settings.toPoint.y + arrowHeadYDelta
+    shiftedToPoint.x - (arrowHeadSize / 2),
+    shiftedToPoint.y + arrowHeadYDelta
   );
   arrowHeadPath.lineTo(
-    settings.toPoint.x + (arrowHeadSize / 2),
-    settings.toPoint.y + arrowHeadYDelta
+    shiftedToPoint.x + (arrowHeadSize / 2),
+    shiftedToPoint.y + arrowHeadYDelta
   );
   arrowHeadPath.lineTo(
-    settings.toPoint.x,
-    settings.toPoint.y
+    shiftedToPoint.x,
+    shiftedToPoint.y
   );
   arrowHeadPath.fill(stroke);
   arrowHeadPath.stroke('none');
