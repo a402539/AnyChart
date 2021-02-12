@@ -290,7 +290,7 @@ anychart.waterfallModule.totals.Storage.prototype.addTotal = function(totalConfi
 
 anychart.waterfallModule.totals.Storage.prototype.removeTotal = function(totalToRemove) {
   var indexOfTotalToRemove = goog.array.findIndex(this.totals_, function(currentTotal) {
-    return currentTotal != totalToRemove;
+    return currentTotal == totalToRemove;
   });
 
   this.removeTotalAt(indexOfTotalToRemove);
