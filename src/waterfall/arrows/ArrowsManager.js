@@ -226,7 +226,8 @@ anychart.waterfallModule.ArrowsManager.prototype.fixArrowPosition = function(arr
     fromPoint: arrowDrawSettings.fromPoint,
     toPoint: arrowDrawSettings.toPoint,
     horizontalY: arrowDrawSettings.horizontalY,
-    isCorrect: arrowDrawSettings.isCorrect
+    isCorrect: arrowDrawSettings.isCorrect,
+    isUp: arrowDrawSettings.isUp
   };
 
   var arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
