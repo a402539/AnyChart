@@ -238,7 +238,6 @@ anychart.waterfallModule.ArrowsManager.prototype.fixArrowPosition = function(arr
 
     var delta = this.getIntersectionDelta(sb, arrowBounds, isUp);
     if (delta !== 0) {
-      console.log(`Arrow: ${arrow.from()} ${arrow.to()}, delta: ${delta} with stack ${i}`)
       newDrawSettings.horizontalY += delta;
 
       arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
@@ -256,7 +255,6 @@ anychart.waterfallModule.ArrowsManager.prototype.fixArrowPosition = function(arr
     var delta = this.getIntersectionDelta(fixedBounds, arrowBounds, isUp);
 
     if (delta !== 0) {
-      console.log(`Arrow: ${arrow.from()} ${arrow.to()}, delta: ${delta} with arrow: ${this.arrows_[i].from()} ${this.arrows_[i].to()}`)
       newDrawSettings.horizontalY += delta;
 
       arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
@@ -273,13 +271,13 @@ anychart.waterfallModule.ArrowsManager.prototype.fixArrowPosition = function(arr
  * Horizontal line is calculated separately.
  */
 anychart.waterfallModule.ArrowsManager.prototype.createDrawSettings = function() {
-  const arrowsDrawSettings = [];
-  for (let i = 0; i < this.arrows_.length; i++) {
-    const arrow = this.arrows_[i];
+  var arrowsDrawSettings = [];
+  for (var i = 0; i < this.arrows_.length; i++) {
+    var arrow = this.arrows_[i];
     
-    const arrowDrawSettings = this.createArrowDrawSettings(arrow);
+    var arrowDrawSettings = this.createArrowDrawSettings(arrow);
 
-    const fixedDrawSettings = arrowDrawSettings.isCorrect ?
+    var fixedDrawSettings = arrowDrawSettings.isCorrect ?
       this.fixArrowPosition(arrow, arrowDrawSettings, arrowsDrawSettings) :
       arrowDrawSettings;
 
@@ -290,11 +288,11 @@ anychart.waterfallModule.ArrowsManager.prototype.createDrawSettings = function()
 
 
 /**
- * @returns {anychart.waterfallModule.Arrow.DrawSettings[]}
+ * @returns {Array.<anychart.waterfallModule.Arrow.DrawSettings>}
  */
 anychart.waterfallModule.ArrowsManager.prototype.getDrawInfo = function() {
   this.getStacksBounds(true);
-  const drawSettings = this.createDrawSettings();
+  var drawSettings = this.createDrawSettings();
   return drawSettings;
 };
 
