@@ -1735,7 +1735,6 @@ anychart.core.series.Cartesian.prototype.makePointEvent = function(event) {
   if (!iter.select(pointIndex))
     iter.reset();
 
-  debugger
   return {
     'type': type,
     'actualTarget': event['target'],

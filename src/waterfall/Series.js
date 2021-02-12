@@ -103,8 +103,7 @@ anychart.waterfallModule.Series.prototype.postProcessPoint = function(iterator, 
   var isTotalValue = iterator.get('isTotal');
   var isMissing = (!!point.meta['missing']) || pointExcluded;
   var isFirstPoint = !(processingMeta.hadNonMissing || isMissing);
-  var isTotal = isFirstPoint ||
-      (goog.isDef(isTotalValue) ? !!isTotalValue : isMissing);
+  var isTotal = (goog.isDef(isTotalValue) ? !!isTotalValue : isMissing);
   if (isMissing && (isFirstPoint || !isTotal)) {
     point.meta['missing'] = anychart.core.series.PointAbsenceReason.VALUE_FIELD_MISSING;
   } else {

@@ -42,7 +42,7 @@ anychart.waterfallModule.totals.Storage = function(chart) {
   /**
    * Datasets of all waterfall series.
    *
-   * @type {Array.<anychart.data.Set>}
+   * @type {Array.<anychart.data.Mapping>}
    * @private
    */
   this.datasets_ = [];
@@ -195,9 +195,9 @@ anychart.waterfallModule.totals.Storage.prototype.calculate = function(mode) {
   this.series_.data(seriesData);
 };
 
-anychart.waterfallModule.totals.Storage.prototype.draw = function() {
-  this.series_.container(this.chart_.rootElement);
-  this.series_.parentBounds(this.chart_.dataBounds);
+anychart.waterfallModule.totals.Storage.prototype.draw = function(container, bounds) {
+  this.series_.container(container);
+  this.series_.parentBounds(bounds);
   this.series_.draw();
 };
 
@@ -221,6 +221,26 @@ anychart.waterfallModule.totals.Storage.prototype.setupSeries = function() {
   this.series_.setParentEventTarget(this.chart_);
 };
 
+/**
+ * Setup series.
+ */
+anychart.waterfallModule.totals.Storage.prototype.handleEvent = function(event) {
+  var tag = event['domTarget']['tag'];
+  var total = tag['total'];
+  var categoryIndex = tag['categoryIndex'];
+
+  if (event.type == goog.events.EventType.MOUSEMOVE) {
+    total.showTooltip(
+      this.chart_,
+      event['originalEvent']['clientX'],
+      event['originalEvent']['clientY']);
+
+    this.series_.hover(categoryIndex);
+  } else if (event.type == goog.events.EventType.MOUSEOUT) {
+    total.hideTooltip();
+    this.series_.unhover();
+  }
+};
 
 //region --- Public API
 /**
@@ -293,7 +313,9 @@ anychart.waterfallModule.totals.Storage.prototype.getAllTotals = function() {
 };
 //endregion
 
-
+/**
+ * @inheritDoc
+ */
 anychart.waterfallModule.totals.Storage.prototype.serialize = function() {
   var json = anychart.waterfallModule.totals.Storage.base(this, 'serialize');
 

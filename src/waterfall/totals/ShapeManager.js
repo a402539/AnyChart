@@ -21,8 +21,8 @@ goog.inherits(anychart.waterfallModule.totals.ShapeManager, anychart.core.shapeM
 
 
 anychart.waterfallModule.totals.ShapeManager.prototype.setupInteractivity = function(shape, nonInteractive, indexOrGlobal) {
-  debugger;
   shape.tag = {
-    index: indexOrGlobal
+    'categoryIndex': indexOrGlobal,
+    'total': this.series.getPoint(indexOrGlobal).get('totalInstance')
   };
 }

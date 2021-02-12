@@ -89,13 +89,16 @@ goog.mixin(goog.global['anychart']['themes']['defaultTheme'], {
       }
     },
     'totals': {
-      'labels': {
+      'label': {
+        'anchor': 'auto',
+        'position': 'auto',
         'format': '{%value}',
         'enabled': true
       },
       'tooltip': {
         'enabled': true,
-        'format': 'custom'
+        'format': '{%value}',
+        'titleFormat': '{%name}'
       },
       'fill': anychart.core.defaultTheme.waterfallTotalFill,
       'stroke': anychart.core.defaultTheme.waterfallTotalStroke,

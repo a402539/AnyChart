@@ -1949,7 +1949,6 @@ anychart.core.series.Base.prototype.colorScaleInvalidated_ = function(event) {
  * @return {!anychart.format.Context}
  */
 anychart.core.series.Base.prototype.getPointProvider = function() {
-  debugger
   if (!this.pointProvider_)
     this.pointProvider_ = new anychart.format.Context();
 
