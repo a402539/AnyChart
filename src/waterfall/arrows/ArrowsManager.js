@@ -110,8 +110,6 @@ anychart.waterfallModule.ArrowsManager.prototype.createArrowBounds = function(ar
       halfSize * 2
     );
 
-  // debugger;
-
   var textBounds = text.getBounds();
 
   var textPosition = text.getTextPosition(arrowBounds, textBounds.height, arrow.label().position(), arrow.label().anchor());
