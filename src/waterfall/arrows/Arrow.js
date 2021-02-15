@@ -3,32 +3,33 @@ goog.provide('anychart.waterfallModule.Arrow');
 goog.require('anychart.core.VisualBase');
 goog.require('anychart.core.ui.LabelsSettings');
 goog.require('anychart.core.ui.OptimizedText');
+goog.require('anychart.math.Point2D');
 goog.require('anychart.math.Rect');
 goog.require('anychart.waterfallModule.ArrowConnector');
 
 
 /**
- * Arrow 
+ * Arrow.
+ *
+ * @param {anychart.waterfallModule.ArrowsController} controller
  * @constructor
  * @extends {anychart.core.VisualBase}
  */
-anychart.waterfallModule.Arrow = function(manager) {
+anychart.waterfallModule.Arrow = function(controller) {
   anychart.waterfallModule.Arrow.base(this, 'constructor');
 
   this.addThemes('waterfall.arrow');
 
-  this.arrowsManager_ = manager;
+  this.arrowsController_ = controller;
 
   anychart.core.settings.createDescriptorsMeta(
     this.descriptorsMeta,
     [
-      // ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
       ['from', 0, anychart.Signal.NEEDS_REDRAW],
       ['to', 0, anychart.Signal.NEEDS_REDRAW]
     ]
   );
 
-  // TODO: handle stroke
   this.connector_ = new anychart.waterfallModule.ArrowConnector();
   this.connector_.addThemes('waterfall.arrow.connector');
 };
@@ -122,7 +123,7 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   var path = this.getArrowPath();
   path.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
 
-  var stroke = this.connector().getOption('stroke');
+  var stroke = /** @type {acgraph.vector.Stroke|string} */(this.connector().getOption('stroke'));
   var thickness = anychart.utils.extractThickness(stroke);
 
   var shiftedFromPoint = new anychart.math.Point2D(
@@ -188,7 +189,7 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
  */
 anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
   var text = this.getText();
-  text.renderTo(this.arrowsManager_.labelsLayerEl_);
+  text.renderTo(this.arrowsController_.labelsLayerEl_);
   text.putAt(
     new anychart.math.Rect(
       settings.fromPoint.x,
@@ -230,7 +231,7 @@ anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
  * Returns label settings.
  *
  * @param {Object=} opt_value
- * @return {anychart.core.ui.LabelsSettings}
+ * @return {anychart.core.ui.LabelsSettings|anychart.waterfallModule.Arrow}
  */
 anychart.waterfallModule.Arrow.prototype.label = function(opt_value) {
   if (!this.labelsSettings_) {
@@ -309,7 +310,7 @@ anychart.waterfallModule.Arrow.prototype.connector = function() {
 
 /** @inheritDoc */
 anychart.waterfallModule.Arrow.prototype.disposeInternal = function() {
-  this.arrowsManager_ = null;
+  this.arrowsController_ = null;
 
   goog.disposeAll(
     this.arrowPath_,

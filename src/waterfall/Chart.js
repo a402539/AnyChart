@@ -1280,13 +1280,21 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
  * Draws waterfall arrows.
  */
 anychart.waterfallModule.Chart.prototype.drawArrows = function() {
+  var arrows = this.arrows();
+
+  if (!this.arrowsLayer_) {
+    this.arrowsLayer_ = this.rootElement.layer();
+    this.arrowsLayer_.zIndex(41); // Above all.
+    arrows.container(this.arrowsLayer_);
+  }
+
   var arrowsInvalidated = this.hasStateInvalidation(
     anychart.enums.Store.WATERFALL, 
     anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
   );
 
   if (arrowsInvalidated) {
-    this.arrows().draw();
+    arrows.draw();
     this.markStateConsistent(
       anychart.enums.Store.WATERFALL,
       anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
@@ -1324,7 +1332,7 @@ anychart.waterfallModule.Chart.prototype.arrowsInvalidationHandler_ = function()
 /**
  * Creates new arrow with given settings.
  *
- * @param {Object} opt_settings - Arrow settings.
+ * @param {Object=} opt_settings - Arrow settings.
  * @return {anychart.waterfallModule.Arrow}
  */
 anychart.waterfallModule.Chart.prototype.addArrow = function(opt_settings) {
