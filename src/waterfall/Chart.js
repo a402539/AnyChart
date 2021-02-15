@@ -1313,12 +1313,10 @@ anychart.waterfallModule.Chart.prototype.updateTotalsStorage = function() {
   }
 };
 
+
 //endregion
 //region --- Overrides
-
-/**
- * @inheritDoc
- */
+/** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.getUsedXScales = function() {
   var scales = anychart.waterfallModule.Chart.base(this, 'getUsedXScales');
 
@@ -1329,31 +1327,35 @@ anychart.waterfallModule.Chart.prototype.getUsedXScales = function() {
   return scales;
 };
 
-anychart.waterfallModule.Chart.prototype.getDrawable = function() {
-  var series = anychart.waterfallModule.Chart.base(this, 'getDrawable');
+
+/** @inheritDoc */
+anychart.waterfallModule.Chart.prototype.getUsedYScales = function() {
+  var scales = anychart.waterfallModule.Chart.base(this, 'getUsedYScales');
+
+  var totalsStorageYScale = this.totalsStorage.getSeries().yScale();
+
+  scales[goog.getUid(totalsStorageYScale)] = totalsStorageYScale;
+
+  return scales;
+};
+
+
+/** @inheritDoc */
+anychart.waterfallModule.Chart.prototype.getDrawableWithScales = function() {
+  var series = anychart.waterfallModule.Chart.base(this, 'getDrawableWithScales');
   return goog.array.concat([this.totalsStorage.getSeries()], series);
 };
 
+
+/** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.calculate = function() {
   this.updateTotalsStorage();
 
   anychart.waterfallModule.Chart.base(this, 'calculate');
 };
 
-anychart.waterfallModule.Chart.prototype.showTotalTooltip = function(total, x, y) {
-  total.showTooltip(this, x, y);
-};
 
-anychart.waterfallModule.Chart.prototype.hideTotalsTooltips = function() {
-  var totals = this.getAllTotals();
-  goog.array.forEach(totals, function(total) {
-    total.tooltip().hide();
-  });
-};
-
-/**
- * @inheritDoc
- */
+/** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.handleMouseOverAndMove = function(event) {
   var target = event.target;
   if (anychart.utils.instanceOf(target, anychart.waterfallModule.totals.Series)) {
@@ -1361,9 +1363,10 @@ anychart.waterfallModule.Chart.prototype.handleMouseOverAndMove = function(event
   } else {
     anychart.waterfallModule.Chart.base(this, 'handleMouseOverAndMove', event);
   }
-
 };
 
+
+/** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.handleMouseOut = function(event) {
   var target = event.target;
   if (anychart.utils.instanceOf(target, anychart.waterfallModule.totals.Series)) {
@@ -1373,6 +1376,7 @@ anychart.waterfallModule.Chart.prototype.handleMouseOut = function(event) {
   }
 };
 
+
 //endregion
 //region --- setup/dispose
 /** @inheritDoc */
@@ -1381,6 +1385,7 @@ anychart.waterfallModule.Chart.prototype.serialize = function() {
   anychart.core.settings.serialize(this, anychart.waterfallModule.Chart.PROPERTY_DESCRIPTORS, json['chart']);
   json['chart']['stackLabels'] = this.stackLabels().serialize();
   json['chart']['connectors'] = this.connectors().serialize();
+  json['chart']['totals'] = this.totalsStorage.serialize();
 
   return json;
 };

@@ -134,14 +134,14 @@ anychart.waterfallModule.totals.Storage.prototype.populateByTotals = function(da
   });
 
   var visibleTotals = goog.array.filter(this.totals_, function(total) {
-    return goog.array.contains(categories, total.getOption('category'));
+    return goog.array.contains(categories, total.getOption('x'));
   });
 
   var categoriesToAdd = goog.array.map(visibleTotals, function(total) {
-    var index = categories.indexOf(total.getOption('category'));
+    var index = categories.indexOf(total.getOption('x'));
     var valuesForTotal = goog.array.slice(values, 0, index + 1);
     return {
-      target: total.getOption('category'),
+      target: total.getOption('x'),
       categories: total.calculate(valuesForTotal)
     };
   });
@@ -272,7 +272,7 @@ anychart.waterfallModule.totals.Storage.prototype.createTotal = function(config)
  */
 anychart.waterfallModule.totals.Storage.prototype.addTotal = function(totalConfig) {
   var alreadyAdded = goog.array.find(this.totals_, function(total) {
-    return total.getOption('category') == totalConfig.category;
+    return total.getOption('x') == totalConfig.x;
   });
 
   if (alreadyAdded) {
@@ -311,17 +311,27 @@ anychart.waterfallModule.totals.Storage.prototype.getTotalAt = function(index) {
 anychart.waterfallModule.totals.Storage.prototype.getAllTotals = function() {
   return goog.array.clone(this.totals_);
 };
-//endregion
 
-/**
- * @inheritDoc
- */
+
+// endregion
+// region --- Serialize/Deserialize
+/** @inheritDoc */
 anychart.waterfallModule.totals.Storage.prototype.serialize = function() {
   var json = anychart.waterfallModule.totals.Storage.base(this, 'serialize');
 
-  json['totals'] = goog.array.map(this.totals_, function(total) {
+  json['items'] = goog.array.map(this.totals_, function(total) {
     return total.serialize();
   });
 
   return json;
-}
+};
+
+
+/** @inheritDoc */
+anychart.waterfallModule.totals.Storage.setupByJSON = function(json, opt_default) {
+  var items = json['items'];
+  goog.array.forEach(items, function(config) {
+    this.addTotal(config);
+  }, this);
+};
+//endregion

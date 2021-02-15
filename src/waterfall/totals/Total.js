@@ -5,6 +5,7 @@ goog.require('anychart.core.settings.IObjectWithSettings');
 goog.require('anychart.core.ui.LabelsSettings');
 goog.require('anychart.core.ui.Tooltip');
 goog.require('anychart.format.Context');
+goog.require('anychart.waterfallModule.totals.TotalStateSettings');
 
 /**
  * Waterfall Total settings.
@@ -21,29 +22,53 @@ anychart.waterfallModule.totals.Total = function() {
     ['name', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
     ['fill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
     ['hatchFill', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE],
-    ['category', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
+    ['x', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
   ];
   anychart.core.settings.createDescriptorsMeta(this.descriptorsMeta, meta);
+
+  this.normal_ = new anychart.waterfallModule.totals.TotalStateSettings(this, this.descriptorsMeta, anychart.SettingsState.NORMAL);
+  this.hovered_ = new anychart.waterfallModule.totals.TotalStateSettings(this, this.descriptorsMeta, anychart.SettingsState.HOVERED);
+
+  this.setupCreated('normal', this.normal_);
+  this.setupCreated('hovered', this.hovered_);
 };
 goog.inherits(anychart.waterfallModule.totals.Total, anychart.core.Base);
+
+
+anychart.core.settings.populateAliases(anychart.waterfallModule.totals.Total, [
+  'stroke',
+  'name',
+  'fill',
+  'hatchFill',
+  'label',
+], 'normal');
+
 
 anychart.waterfallModule.totals.Total.PROPERTY_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
 
   anychart.core.settings.createDescriptors(map, [
-    anychart.core.settings.descriptors.STROKE,
-    anychart.core.settings.descriptors.FILL,
-    anychart.core.settings.descriptors.HATCH_FILL,
-    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'category', anychart.core.settings.stringNormalizer],
+    [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'x', anychart.core.settings.stringNormalizer],
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'name', anychart.core.settings.stringNormalizer]
   ]);
-
   return map;
 })();
 anychart.core.settings.populate(anychart.waterfallModule.totals.Total, anychart.waterfallModule.totals.Total.PROPERTY_DESCRIPTORS);
 
+
+/**
+ * Supported signals.
+ * @type {number}
+ */
 anychart.waterfallModule.totals.Total.prototype.SUPPORTED_SIGNALS = anychart.Signal.NEEDS_REDRAW_APPEARANCE;
+
+
+/**
+ * Supported consistency states.
+ * @type {number}
+ */
+anychart.waterfallModule.totals.Total.prototype.SUPPORTED_CONSISTENCY_STATES = anychart.ConsistencyState.ALL;
 
 
 /**
@@ -68,69 +93,66 @@ anychart.waterfallModule.totals.Total.prototype.getTotalValue = function(values)
 anychart.waterfallModule.totals.Total.prototype.calculate = function(values) {
   this.value_ = this.getTotalValue(values);
 
-  var labelSettings = this.getLabelConfig();
+  var normal = this.normal().serialize();
+  var hovered = this.hovered().serialize();
+
+  this.modifyConfig(normal);
+  this.modifyConfig(hovered);
 
   var name = this.getOption('name');
-  var x = goog.isDef(name) ? name : 'Total ' + this.getOption('category');
+  var x = goog.isDef(name) ? name : 'Total ' + this.getOption('x');
 
   return [
     {
       'x': x,
-      'fill': this.getOption('fill'),
-      'stroke': this.getOption('stroke'),
-      'hatchFill': this.getOption('hatchFill'),
-      'label': labelSettings,
+      'normal': normal,
+      'hovered': hovered,
       'value': this.value_,
       'totalInstance': this
     }
   ];
 };
 
-/**
- *
- * @param {anychart.SignalEvent} event - Signal event.
- * @private
- */
-anychart.waterfallModule.totals.Total.prototype.labelsSettingsInvalidated_ = function(event) {
-  this.invalidate(anychart.ConsistencyState.AXIS_LABELS, anychart.Signal.NEEDS_REDRAW);
-};
 
-/**
- *
- * @param {Object=} opt_config
- * @return {anychart.core.ui.LabelsSettings|anychart.waterfallModule.totals.Total}
- */
-anychart.waterfallModule.totals.Total.prototype.label = function(opt_config) {
-  if (!this.labelsSettings_) {
-    this.labelsSettings_ = new anychart.core.ui.LabelsSettings();
-
-    this.labelsSettings_.listenSignals(this.labelsSettingsInvalidated_, this);
-    this.setupCreated('label', this.labelsSettings_);
-  }
-
-  if (goog.isDef(opt_config)) {
-    this.labelsSettings_.setup(opt_config);
+anychart.waterfallModule.totals.Total.prototype.normal = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    this.normal_.setup(opt_value);
     return this;
   }
-
-  return this.labelsSettings_;
+  return this.normal_;
 };
 
-anychart.waterfallModule.totals.Total.prototype.getLabelConfig = function() {
-  var labelSettings = this.label().flatten();
 
-  if (labelSettings.position == anychart.enums.Position.AUTO) {
-    labelSettings.position =
+anychart.waterfallModule.totals.Total.prototype.hovered = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    this.hovered_.setup(opt_value);
+    return this;
+  }
+  return this.hovered_;
+};
+
+//region -- Labels
+anychart.waterfallModule.totals.Total.prototype.modifyLabelConfig = function(config) {
+  if (config.position == anychart.enums.Position.AUTO) {
+    config.position =
       this.value_ >= 0 ? anychart.enums.Position.CENTER_TOP : anychart.enums.Position.CENTER_BOTTOM;
   }
-  if (labelSettings.anchor == anychart.enums.Anchor.AUTO) {
-    labelSettings.anchor =
+  if (config.anchor == anychart.enums.Anchor.AUTO) {
+    config.anchor =
       this.value_ >= 0 ? anychart.enums.Anchor.CENTER_BOTTOM : anychart.enums.Anchor.CENTER_TOP;
   }
 
-  return labelSettings;
+  return config;
 };
 
+anychart.waterfallModule.totals.Total.prototype.modifyConfig = function(config) {
+  this.modifyLabelConfig(config['label']);
+};
+
+/**
+ * Creates tooltip format provider.
+ * @return {Object}
+ */
 anychart.waterfallModule.totals.Total.prototype.createFormatProvider = function() {
   if (!this.formatProvider_) {
     this.formatProvider_ = new anychart.format.Context();
@@ -141,7 +163,7 @@ anychart.waterfallModule.totals.Total.prototype.createFormatProvider = function(
   var context = {
     'value': {value: this.value_, type: anychart.enums.TokenType.NUMBER},
     'name': {
-      value: goog.isDef(name) ? name : 'Total ' + this.getOption('category'),
+      value: goog.isDef(name) ? name : 'Total ' + this.getOption('x'),
       type: anychart.enums.TokenType.STRING
     },
   };
@@ -149,6 +171,9 @@ anychart.waterfallModule.totals.Total.prototype.createFormatProvider = function(
   return /** @type {anychart.format.Context} */(this.formatProvider_.propagate(context));
 };
 
+
+//endregion
+//region --- Tooltip
 anychart.waterfallModule.totals.Total.prototype.showTooltip = function(parent, x, y) {
   var tooltip = this.tooltip();
   tooltip.chart(parent);
@@ -156,14 +181,19 @@ anychart.waterfallModule.totals.Total.prototype.showTooltip = function(parent, x
   tooltip.showFloat(x, y, this.createFormatProvider());
 };
 
+
+/**
+ * Hide tooltip.
+ */
 anychart.waterfallModule.totals.Total.prototype.hideTooltip = function() {
   this.tooltip().hide();
 };
 
+
 /**
- *
- * @param {Object=} opt_value
- * @return {anychart.waterfallModule.totals.Total|*}
+ * Getter and setter for the tooltip.
+ * @param {(Object|boolean|null)=} opt_value Tooltip settings.
+ * @return {!(anychart.waterfallModule.totals.Total|anychart.core.ui.Tooltip)} Tooltip instance or itself for chaining call.
  */
 anychart.waterfallModule.totals.Total.prototype.tooltip = function(opt_value) {
   if (!this.tooltip_) {
@@ -179,6 +209,8 @@ anychart.waterfallModule.totals.Total.prototype.tooltip = function(opt_value) {
   }
 };
 
+
+//endregion
 //region --- Serialization
 anychart.waterfallModule.totals.Total.prototype.serialize = function() {
   var json = anychart.waterfallModule.totals.Total.base(this, 'serialize');
