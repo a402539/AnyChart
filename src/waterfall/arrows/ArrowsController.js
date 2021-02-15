@@ -36,17 +36,34 @@ anychart.waterfallModule.ArrowsController.prototype.SUPPORTED_SIGNALS =
 anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX = 30;
 
 
+/**
+ * Returns index of the given value on X scale.
+ *
+ * @param {string} value - From/to arrow value.
+ */
 anychart.waterfallModule.ArrowsController.prototype.getIndexFromValue = function(value) {
   return this.chart_.xScale().getIndexByValue(value);
 };
 
 
+/**
+ * Checks if arrow is looking up.
+ * It does so, if 'from' stack is 
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ */
 anychart.waterfallModule.ArrowsController.prototype.isArrowUp = function(arrow) {
   var fromIndex = this.getIndexFromValue(arrow.getOption('from'));
 
   return this.chart_.getStackSum(fromIndex, 'diff') >= 0;
 };
 
+
+/**
+ * Returns arrows draw settings.
+ *
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ * @param {anychart.math.Rect} stackLabelsBounds - Stack labels bounds.
+ */
 anychart.waterfallModule.ArrowsController.prototype.createArrowDrawSettings = function(arrow, stackLabelsBounds) {
   var fromIndex = this.getIndexFromValue(arrow.getOption('from'));
   var toIndex = this.getIndexFromValue(arrow.getOption('to'));
@@ -96,6 +113,14 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowDrawSettings = fu
 };
 
 
+/**
+ * Returns arrow bounds to be used while arrow positioning.
+ * Bounds cover horizontal line and label.
+ *
+ * @param {anychart.waterfallModule.Arrow.DrawSettings} arrowDrawSettings - Arrow draw settings.
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ * @return {anychart.math.Rect}
+ */
 anychart.waterfallModule.ArrowsController.prototype.createArrowBounds = function(arrowDrawSettings, arrow) {
   var text = arrow.getText();
 
@@ -129,6 +154,12 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowBounds = function
 };
 
 
+/**
+ * 
+ * @param {anychart.waterfallModule.Arrow} arrow
+ * @param {anychart.math.Rect} arrowBounds
+ * @return {anychart.math.rect}
+ */
 anychart.waterfallModule.ArrowsController.prototype.createArrowTextBounds = function(arrow, arrowBounds) {
   var text = arrow.getText();
   var textBounds = text.getBounds();
@@ -145,6 +176,10 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowTextBounds = func
 };
 
 
+/**
+ * 
+ * @param {Array.<anychart.math.Rect>} index
+ */
 anychart.waterfallModule.ArrowsController.prototype.getAllSeriesLabelsBounds = function(index) {
   var bounds = [];
   var chart = this.chart_;
@@ -161,6 +196,9 @@ anychart.waterfallModule.ArrowsController.prototype.getAllSeriesLabelsBounds = f
 };
 
 
+/**
+ * @return {Array.<anychart.math.Rect>}
+ */
 anychart.waterfallModule.ArrowsController.prototype.getSeriesLabelsBounds = function() {
   var chart = this.chart_;
   var seriesCount = chart.getSeriesCount();
@@ -177,6 +215,11 @@ anychart.waterfallModule.ArrowsController.prototype.getSeriesLabelsBounds = func
 };
 
 
+/**
+ * 
+ * @param {number} index
+ * @return {anychart.math.Rect}
+ */
 anychart.waterfallModule.ArrowsController.prototype.getStackFullBounds = function(index) {
   var chart = this.chart_;
   var bounds = chart.getStackBounds(index);
@@ -208,6 +251,13 @@ anychart.waterfallModule.ArrowsController.prototype.getStacksBounds = function(o
 };
 
 
+/**
+ * 
+ * @param {anychart.math.Rect} fixedBounds
+ * @param {anychart.math.Rect} freeBounds
+ * @param {boolean} isMovingUp
+ * @return {number}
+ */
 anychart.waterfallModule.ArrowsController.prototype.getIntersectionDelta = function(fixedBounds, freeBounds, isMovingUp) {
   if (fixedBounds.intersects(freeBounds)) {
     if (isMovingUp) {
@@ -221,6 +271,12 @@ anychart.waterfallModule.ArrowsController.prototype.getIntersectionDelta = funct
 };
 
 
+/**
+ * 
+ * @param {anychart.waterfallModule.Arrow} arrow
+ * @param {anychart.waterfallModule.Arrow.DrawSettings} arrowDrawSettings
+ * @param {Array.<anychart.waterfallModule.Arrow.DrawSettings>} arrowsDrawSettings
+ */
 anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(arrow, arrowDrawSettings, arrowsDrawSettings) {
   var stackBounds = this.getStacksBounds();
   var isUp = this.isArrowUp(arrow);
@@ -299,6 +355,9 @@ anychart.waterfallModule.ArrowsController.prototype.getDrawInfo = function() {
 };
 
 
+/**
+ * Applies labels style.
+ */
 anychart.waterfallModule.ArrowsController.prototype.applyLabelsStyle = function() {
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
@@ -324,6 +383,9 @@ anychart.waterfallModule.ArrowsController.prototype.applyLabelsStyle = function(
 };
 
 
+/**
+ * Prepare and draw arrows.
+ */
 anychart.waterfallModule.ArrowsController.prototype.draw = function() {
   var chart = this.chart_;
   var labelsLayer = this.getLabelsLayer();
@@ -353,6 +415,11 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
 };
 
 
+/**
+ *
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ * @return {boolean}
+ */
 anychart.waterfallModule.ArrowsController.prototype.removeArrow = function(arrow) {
   var indexToDelete = goog.array.indexOf(this.arrows_, arrow);
 
@@ -363,6 +430,12 @@ anychart.waterfallModule.ArrowsController.prototype.removeArrow = function(arrow
 };
 
 
+/**
+ * Remove arrow at index.
+ *
+ * @param {number} index
+ * @return {boolean}
+ */
 anychart.waterfallModule.ArrowsController.prototype.removeArrowAt = function(index) {
   var arrow = this.arrows_[index];
 
@@ -376,15 +449,27 @@ anychart.waterfallModule.ArrowsController.prototype.removeArrowAt = function(ind
 };
 
 
+/**
+ * Get arrow at index.
+ *
+ * @param {number} index - Arrow index.
+ * @return {anychart.waterfallModule.Arrow}
+ */
 anychart.waterfallModule.ArrowsController.prototype.getArrow = function(index) {
   return this.arrows_[index] || null;
 };
 
 
-anychart.waterfallModule.ArrowsController.prototype.addArrow = function(options) {
+/**
+ * Create arrow with given settings.
+ *
+ * @param {Object=} opt_settings 
+ * @return {anychart.waterfallModule.Arrow}
+ */
+anychart.waterfallModule.ArrowsController.prototype.addArrow = function(opt_settings) {
   var arrow = new anychart.waterfallModule.Arrow(this);
-  if (goog.isDef(options)) {
-    arrow.setup(options);
+  if (goog.isDef(opt_settings)) {
+    arrow.setup(opt_settings);
     arrow.listenSignals(this.arrowInvalidationHandler_, this);
   }
   this.arrows_.push(arrow);
@@ -392,16 +477,22 @@ anychart.waterfallModule.ArrowsController.prototype.addArrow = function(options)
 };
 
 
+/**
+ * @return {Array.<anychart.waterfallModule.Arrow>}
+ */
 anychart.waterfallModule.ArrowsController.prototype.getAllArrows = function() {
   return goog.array.clone(this.arrows_);
 };
 
 
+/**
+ * Arrow invalidation handler.
+ */
 anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = function() {
   this.dispatchSignal(
-    anychart.Signal.NEEDS_REDRAW |
-    anychart.Signal.MEASURE_BOUNDS |
-    anychart.Signal.MEASURE_COLLECT
+    anychart.Signal.NEEDS_REDRAW // |
+    // anychart.Signal.MEASURE_BOUNDS |
+    // anychart.Signal.MEASURE_COLLECT
   );
 };
 
@@ -431,6 +522,9 @@ anychart.waterfallModule.ArrowsController.prototype.disposeInternal = function()
 
 
 //region --- IMeasurementsTargetProvider
+/**
+ * @return {Array.<anychart.core.ui.OptimizedText>}
+ */
 anychart.waterfallModule.ArrowsController.prototype.provideMeasurements = function() {
   var labels = [];
   for (var i = 0; i < this.arrows_.length; i++) {

@@ -229,7 +229,8 @@ anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
 /**
  * Returns label settings.
  *
- * @param {Object=} opt_value 
+ * @param {Object=} opt_value
+ * @return {anychart.core.ui.LabelsSettings}
  */
 anychart.waterfallModule.Arrow.prototype.label = function(opt_value) {
   if (!this.labelsSettings_) {
