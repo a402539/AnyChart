@@ -1293,7 +1293,9 @@ anychart.waterfallModule.Chart.prototype.drawArrows = function() {
     anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
   );
 
-  if (arrowsInvalidated) {
+  var boundsInvalidated = this.hasInvalidationState(anychart.ConsistencyState.BOUNDS);
+
+  if (arrowsInvalidated || boundsInvalidated) {
     arrows.draw();
     this.markStateConsistent(
       anychart.enums.Store.WATERFALL,
