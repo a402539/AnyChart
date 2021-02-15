@@ -1324,7 +1324,7 @@ anychart.waterfallModule.Chart.prototype.arrowsInvalidationHandler_ = function()
 /**
  * Creates new arrow with given settings.
  *
- * @param {Object} settings - Arrow settings.
+ * @param {Object} opt_settings - Arrow settings.
  * @return {anychart.waterfallModule.Arrow}
  */
 anychart.waterfallModule.Chart.prototype.addArrow = function(opt_settings) {

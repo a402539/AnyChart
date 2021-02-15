@@ -85,7 +85,11 @@ anychart.waterfallModule.Arrow.prototype.SUPPORTED_SIGNALS =
     anychart.Signal.NEEDS_REDRAW |
     anychart.Signal.NEEDS_REDRAW_LABELS;
 
-
+/**
+ * Returns arrow connector path.
+ *
+ * @return {acgraph.vector.Path}
+ */
 anychart.waterfallModule.Arrow.prototype.getArrowPath = function() {
   if (!this.arrowPath_) {
     this.arrowPath_ = this.container().path();
@@ -95,6 +99,11 @@ anychart.waterfallModule.Arrow.prototype.getArrowPath = function() {
 };
 
 
+/**
+ * Returns arrow head path.
+ *
+ * @return {acgraph.vector.Path}
+ */
 anychart.waterfallModule.Arrow.prototype.getArrowHeadPath = function() {
   if (!goog.isDef(this.arrowHeadPath_)) {
     this.arrowHeadPath_ = this.container().path();
@@ -104,6 +113,11 @@ anychart.waterfallModule.Arrow.prototype.getArrowHeadPath = function() {
 };
 
 
+/**
+ * Draws arrow connector and head.
+ *
+ * @param {anychart.waterfallModule.Arrow.DrawSettings} settings 
+ */
 anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   var path = this.getArrowPath();
   path.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
@@ -167,6 +181,11 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
 };
 
 
+/**
+ * Draws arrow label.
+ *
+ * @param {anychart.waterfallModule.Arrow.DrawSettings} settings - Draw settings.
+ */
 anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
   var text = this.getText();
   text.renderTo(this.arrowsManager_.labelsLayerEl_);
@@ -182,6 +201,9 @@ anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
 };
 
 
+/**
+ * Clear arrow paths and label.
+ */
 anychart.waterfallModule.Arrow.prototype.clear = function() {
   this.getText().renderTo(null);
   this.getArrowPath().clear();
@@ -189,6 +211,11 @@ anychart.waterfallModule.Arrow.prototype.clear = function() {
 };
 
 
+/**
+ * Draws arrow.
+ *
+ * @param {anychart.waterfallModule.Arrow.DrawSettings} settings - Draw settings.
+ */
 anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
   this.clear();
 
@@ -200,7 +227,8 @@ anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
 
 
 /**
- * 
+ * Returns label settings.
+ *
  * @param {Object=} opt_value 
  */
 anychart.waterfallModule.Arrow.prototype.label = function(opt_value) {
@@ -254,6 +282,11 @@ anychart.waterfallModule.Arrow.prototype.serialize = function() {
 };
 
 
+/**
+ * Return optimized text.
+ * 
+ * @return {anychart.core.ui.OptimizedText}
+ */
 anychart.waterfallModule.Arrow.prototype.getText = function() {
   if (!goog.isDef(this.text_)) {
     this.text_ = new anychart.core.ui.OptimizedText();
@@ -263,6 +296,11 @@ anychart.waterfallModule.Arrow.prototype.getText = function() {
 };
 
 
+/**
+ * Returns arrow connector instance.
+ *
+ * @return {anychart.waterfallModule.ArrowConnector}
+ */
 anychart.waterfallModule.Arrow.prototype.connector = function() {
   return this.connector_;
 };

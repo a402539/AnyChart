@@ -1,6 +1,7 @@
 goog.provide('anychart.waterfallModule.ArrowConnector');
 
 goog.require('anychart.core.Base');
+goog.require('anychart.core.settings.IObjectWithSettings');
 
 
 /**
