@@ -139,7 +139,7 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowBounds = function
   var arrowBounds = new anychart.math.Rect(
       arrowDrawSettings.fromPoint.x,
       arrowDrawSettings.horizontalY - halfSize,
-      arrowDrawSettings.toPoint.y - arrowDrawSettings.fromPoint.y,
+      arrowDrawSettings.toPoint.x - arrowDrawSettings.fromPoint.x,
       halfSize * 2
     );
 
@@ -497,7 +497,10 @@ anychart.waterfallModule.ArrowsController.prototype.addArrow = function(opt_sett
     arrow.setup(opt_settings);
     arrow.listenSignals(this.arrowInvalidationHandler_, this);
   }
+
   this.arrows_.push(arrow);
+  
+  this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
   return arrow;
 };
 
