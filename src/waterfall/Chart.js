@@ -6,7 +6,7 @@ goog.require('anychart.core.shapeManagers');
 goog.require('anychart.core.ui.LabelsFactory');
 goog.require('anychart.enums');
 goog.require('anychart.format.Context');
-goog.require('anychart.waterfallModule.ArrowsManager');
+goog.require('anychart.waterfallModule.ArrowsController');
 goog.require('anychart.waterfallModule.Connectors');
 goog.require('anychart.waterfallModule.Series');
 
@@ -197,11 +197,7 @@ anychart.waterfallModule.Chart.prototype.drawContent = function(contentBounds) {
 
   this.drawLabels();
   
-  this.arrows().draw();
-  this.markStateConsistent(
-    anychart.enums.Store.WATERFALL,
-    anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
-  );
+  this.drawArrows();
 };
 
 
@@ -1068,9 +1064,14 @@ anychart.waterfallModule.Chart.prototype.getStackBounds = function(index) {
 };
 
 
+/**
+ * Returns number of stacks, including excluded/invisible once.
+ *
+ * @return {number} - Number of stacks on waterfall chart.
+ */
 anychart.waterfallModule.Chart.prototype.getStacksCount = function() {
   return this.drawingPlans[0].data.length;
-}
+};
 
 
 /**
@@ -1275,6 +1276,9 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
 
 //endregion
 //region --- Arrows
+/**
+ * Draws waterfall arrows.
+ */
 anychart.waterfallModule.Chart.prototype.drawArrows = function() {
   var arrowsInvalidated = this.hasStateInvalidation(
     anychart.enums.Store.WATERFALL, 
@@ -1291,15 +1295,23 @@ anychart.waterfallModule.Chart.prototype.drawArrows = function() {
 };
 
 
+/**
+ * Returns arrows controller.
+ *
+ * @return {anychart.waterfallModule.ArrowsController}
+ */
 anychart.waterfallModule.Chart.prototype.arrows = function() {
-  if (!goog.isDef(this.arrowsManager_)) {
-    this.arrowsManager_ = new anychart.waterfallModule.ArrowsManager(this);
-    this.arrowsManager_.listenSignals(this.arrowsInvalidationHandler_, this);
+  if (!goog.isDef(this.arrowsController_)) {
+    this.arrowsController_ = new anychart.waterfallModule.ArrowsController(this);
+    this.arrowsController_.listenSignals(this.arrowsInvalidationHandler_, this);
   }
-  return this.arrowsManager_;
+  return this.arrowsController_;
 };
 
 
+/**
+ * Handles arrows invalidation signals.
+ */
 anychart.waterfallModule.Chart.prototype.arrowsInvalidationHandler_ = function() {
   this.invalidateState(
     anychart.enums.Store.WATERFALL,
@@ -1309,26 +1321,55 @@ anychart.waterfallModule.Chart.prototype.arrowsInvalidationHandler_ = function()
 };
 
 
-anychart.waterfallModule.Chart.prototype.addArrow = function(options) {
-  return this.arrows().addArrow(options);
+/**
+ * Creates new arrow with given settings.
+ *
+ * @param {Object} settings - Arrow settings.
+ * @return {anychart.waterfallModule.Arrow}
+ */
+anychart.waterfallModule.Chart.prototype.addArrow = function(opt_settings) {
+  return this.arrows().addArrow(opt_settings);
 };
 
 
+/**
+ * Returns arrow with given index.
+ *
+ * @param {number} index - Arrow index.
+ * @return {anychart.waterfallModule.Arrow}
+ */
 anychart.waterfallModule.Chart.prototype.getArrow = function(index) {
   return this.arrows().getArrow(index);
 };
 
 
+/**
+ * Removes arrow with given index.
+ *
+ * @param {number} index - Arrow index to remove.
+ * @return {boolean} - Whether arrow removed or not.
+ */
 anychart.waterfallModule.Chart.prototype.removeArrowAt = function(index) {
   return this.arrows().removeArrowAt(index);
 };
 
 
+/**
+ * Removes arrow instance.
+ *
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ * @return {boolean} - Whether arrow removed or not.
+ */
 anychart.waterfallModule.Chart.prototype.removeArrow = function(arrow) {
   return this.arrows().removeArrow(arrow);
 };
 
 
+/**
+ * Returns array with all instances of arrows.
+ *
+ * @return {Array.<anychart.waterfallModule.Arrow>} - Array of arrow instances.
+ */
 anychart.waterfallModule.Chart.prototype.getAllArrows = function() {
   return this.arrows().getAllArrows();
 };
@@ -1376,7 +1417,7 @@ anychart.waterfallModule.Chart.prototype.disposeInternal = function() {
       this.connectorPath_,
       this.connectorsLabelsLayer_,
       this.connectors_,
-      this.arrowsManager_
+      this.arrowsController_
   );
   anychart.waterfallModule.Chart.base(this, 'disposeInternal');
 };
