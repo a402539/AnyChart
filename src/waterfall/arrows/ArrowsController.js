@@ -35,6 +35,8 @@ anychart.waterfallModule.ArrowsController.prototype.SUPPORTED_SIGNALS =
 
 anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX = 41;
 
+anychart.waterfallModule.ArrowsController.ARROWS_LABELS_ZINDEX = 42;
+
 
 /**
  * Returns index of the given value on X scale.
@@ -486,15 +488,12 @@ anychart.waterfallModule.ArrowsController.prototype.applyLabelsStyle = function(
  */
 anychart.waterfallModule.ArrowsController.prototype.draw = function() {
   var chart = this.chart_;
+
   var labelsLayer = this.getLabelsLayer();
-  var container = /** @type {acgraph.vector.ILayer} */(this.container());
-  labelsLayer.parent(container);
-  labelsLayer.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX + 1);
-  
-  if (!this.arrowsLayer_) {
-    this.arrowsLayer_ = container.layer();
-    this.arrowsLayer_.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
-  }
+  var arrowsLayer = this.getArrowsLayer();
+
+  var rootLayer = this.getRootLayer();
+  rootLayer.clip(chart.dataBounds);
 
   this.checkArrowsCorrectness();
 
@@ -509,7 +508,7 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
 
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
-    arrow.container(this.arrowsLayer_);
+    arrow.container(arrowsLayer);
     arrow.draw();
   }
 };
@@ -600,16 +599,44 @@ anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = 
 };
 
 
+anychart.waterfallModule.ArrowsController.prototype.getRootLayer = function() {
+  if (!this.rootLayer_) {
+    this.rootLayer_ = this.container().layer();
+    this.rootLayer_.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
+  }
+
+  return this.rootLayer_;
+};
+
+
 /**
  * Getter for labels layer.
  * @return {acgraph.vector.UnmanagedLayer}
  */
 anychart.waterfallModule.ArrowsController.prototype.getLabelsLayer = function() {
   if (!this.labelsLayer_) {
+    var rootLayer = this.getRootLayer();
     this.labelsLayerEl_ = /** @type {Element} */(acgraph.getRenderer().createLayerElement());
     this.labelsLayer_ = acgraph.unmanagedLayer(this.labelsLayerEl_);
+    this.labelsLayer_.parent(rootLayer);
+    this.labelsLayer_.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_LABELS_ZINDEX);
   }
+
   return this.labelsLayer_;
+};
+
+
+/**
+ * @return {acgraph.vector.Layer}
+ */
+anychart.waterfallModule.ArrowsController.prototype.getArrowsLayer = function() {
+  if (!this.arrowsLayer_) {
+    var rootLayer = this.getRootLayer();
+    this.arrowsLayer_ = rootLayer.layer();
+    this.arrowsLayer_.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
+  }
+
+  return this.arrowsLayer_;
 };
 
 
