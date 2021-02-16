@@ -8,6 +8,7 @@ goog.require('anychart.math.Rect');
 goog.require('anychart.waterfallModule.ArrowConnector');
 
 
+
 /**
  * Arrow.
  *
@@ -23,11 +24,11 @@ anychart.waterfallModule.Arrow = function(controller) {
   this.arrowsController_ = controller;
 
   anychart.core.settings.createDescriptorsMeta(
-    this.descriptorsMeta,
-    [
-      ['from', 0, anychart.Signal.NEEDS_REDRAW],
-      ['to', 0, anychart.Signal.NEEDS_REDRAW]
-    ]
+      this.descriptorsMeta,
+      [
+        ['from', 0, anychart.Signal.NEEDS_REDRAW],
+        ['to', 0, anychart.Signal.NEEDS_REDRAW]
+      ]
   );
 
   this.connector_ = new anychart.waterfallModule.ArrowConnector();
@@ -43,7 +44,7 @@ goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
   *   horizontalY: number,
   *   isCorrect: boolean,
   *   isUp: boolean
-  * }}
+  *}}
   */
  anychart.waterfallModule.Arrow.DrawSettings;
 
@@ -287,7 +288,7 @@ anychart.waterfallModule.Arrow.prototype.serialize = function() {
 
 /**
  * Return optimized text.
- * 
+ *
  * @return {anychart.core.ui.OptimizedText}
  */
 anychart.waterfallModule.Arrow.prototype.getText = function() {
