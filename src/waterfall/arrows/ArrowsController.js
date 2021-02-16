@@ -571,7 +571,7 @@ anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = fu
 anychart.waterfallModule.ArrowsController.prototype.positionFromToPoints = function() {
   for (var i = 0; i < this.xScaleValueToArrows_.length; i++) {
     var arrows = this.xScaleValueToArrows_[i];
-    if (arrows && arrows.length > 1) {
+    if (arrows && !this.singleInOut_ && arrows.length > 1) {
       var upArrows = goog.array.filter(arrows, function(arrow) {
         return this.isArrowUp(arrow);
       }, this);
@@ -582,6 +582,9 @@ anychart.waterfallModule.ArrowsController.prototype.positionFromToPoints = funct
 
       this.modifyArrowsFromToPoint(upArrows, i);
       this.modifyArrowsFromToPoint(downArrows, i);
+    } else {
+      if (arrows)
+        this.modifyArrowsFromToPoint(arrows, i);
     }
   }
 };
