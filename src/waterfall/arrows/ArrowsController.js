@@ -208,10 +208,17 @@ anychart.waterfallModule.ArrowsController.prototype.getAllSeriesLabelsBounds = f
     var labelsFactory = chart.getSeries(i).labels();
     var label = labelsFactory.getLabel(index);
     if (label && (label.enabled() || labelsFactory.enabled())) {
+      // TODO: private property access!
       var labelBounds = label.bounds_;
       bounds.push(labelBounds);
     }
   }
+
+  if (chart.stackLabels().enabled()) {
+    // TODO: private property access!
+    bounds.push(chart.stackLabels().getLabel(index).bounds_);
+  }
+
   return bounds;
 };
 
