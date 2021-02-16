@@ -1276,6 +1276,16 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
 //endregion
 //region --- Arrows
 /**
+ * If single in and out for arrows should be used.
+ * @param {boolean=} opt_value - .
+ * @return {boolean}
+ */
+anychart.waterfallModule.Chart.prototype.arrowsSingleInOut = function(opt_value) {
+  return this.arrowsController().singleInOut(opt_value);
+};
+
+
+/**
  * Draws waterfall arrows.
  */
 anychart.waterfallModule.Chart.prototype.drawArrows = function() {
@@ -1488,6 +1498,7 @@ anychart.waterfallModule.Chart.prototype.disposeInternal = function() {
   proto['removeArrowAt'] = proto.removeArrowAt;
   proto['removeArrow'] = proto.removeArrow;
   proto['getAllArrows'] = proto.getAllArrows;
+  proto['arrowsSingleInOut'] = proto.arrowsSingleInOut;
   // deprecated
   proto['connectorStroke'] = proto.connectorStroke;
 })();

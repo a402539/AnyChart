@@ -32,6 +32,8 @@ anychart.waterfallModule.ArrowsController = function(chart) {
    */
   this.xScaleValueToArrows_ = [];
 
+  this.singleInOut_ = true;
+
   anychart.measuriator.register(this);
 };
 goog.inherits(anychart.waterfallModule.ArrowsController, anychart.core.VisualBase);
@@ -46,6 +48,21 @@ anychart.waterfallModule.ArrowsController.prototype.SUPPORTED_SIGNALS =
 anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX = 41;
 
 anychart.waterfallModule.ArrowsController.ARROWS_LABELS_ZINDEX = 42;
+
+
+/**
+ * Is single positions for in and out points should be used.
+ * @param {boolean=} opt_value - If single positions on stack for in/out.
+ * @return {boolean}
+ */
+anychart.waterfallModule.ArrowsController.prototype.singleInOut = function(opt_value) {
+  if (goog.isDef(opt_value) && this.singleInOut_ !== opt_value) {
+    this.singleInOut_ = opt_value;
+    this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
+  }
+
+  return this.singleInOut_;
+};
 
 
 /**
@@ -530,15 +547,19 @@ anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = fu
 
   goog.array.sort(arrows, bindedSortFunction);
 
+  var singleInOut = this.singleInOut_;
+  var inPosition = stackBounds.getLeft() + (stackBounds.getWidth() / 3);
+  var outPosition = stackBounds.getLeft() + (stackBounds.getWidth() * 0.666);
+
   for (var i = 0; i < arrows.length; i++) {
     var arrow = arrows[i];
     var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
 
     var xValue = stackBounds.getLeft() + ((i + 1) * step);
     if (fromIndex === xScaleIndex) {
-      arrow.drawSettings().fromPoint.x = xValue;
+      arrow.drawSettings().fromPoint.x = singleInOut ? outPosition : xValue;
     } else {
-      arrow.drawSettings().toPoint.x = xValue;
+      arrow.drawSettings().toPoint.x = singleInOut ? inPosition : xValue;
     }
   }
 };
