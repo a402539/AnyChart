@@ -407,6 +407,8 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
     }
   }
 
+  arrow.drawSettings(newDrawSettings);
+
   return newDrawSettings;
 };
 
@@ -497,10 +499,10 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
   var drawInfo = this.getDrawInfo();
 
   for (var i = 0; i < drawInfo.length; i++) {
-    var di = drawInfo[i];
+    // var di = drawInfo[i];
     var arrow = this.arrows_[i];
     arrow.container(this.arrowsLayer_);
-    arrow.draw(di);
+    arrow.draw();
   }
 };
 

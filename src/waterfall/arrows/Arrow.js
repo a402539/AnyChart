@@ -116,10 +116,10 @@ anychart.waterfallModule.Arrow.prototype.getArrowHeadPath = function() {
 
 /**
  * Draws arrow connector and head.
- *
- * @param {anychart.waterfallModule.Arrow.DrawSettings} settings 
  */
-anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
+anychart.waterfallModule.Arrow.prototype.drawConnector = function() {
+  var drawSettings = this.drawSettings();
+
   var path = this.getArrowPath();
   path.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
 
@@ -127,16 +127,16 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
   var thickness = anychart.utils.extractThickness(stroke);
 
   var shiftedFromPoint = new anychart.math.Point2D(
-    anychart.utils.applyPixelShift(settings.fromPoint.x, thickness),
-    anychart.utils.applyPixelShift(settings.fromPoint.y, thickness)
+    anychart.utils.applyPixelShift(drawSettings.fromPoint.x, thickness),
+    anychart.utils.applyPixelShift(drawSettings.fromPoint.y, thickness)
   );
 
   var shiftedToPoint = new anychart.math.Point2D(
-    anychart.utils.applyPixelShift(settings.toPoint.x, thickness),
-    anychart.utils.applyPixelShift(settings.toPoint.y, thickness)
+    anychart.utils.applyPixelShift(drawSettings.toPoint.x, thickness),
+    anychart.utils.applyPixelShift(drawSettings.toPoint.y, thickness)
   );
 
-  var shiftedHorizontalY = anychart.utils.applyPixelShift(settings.horizontalY, thickness);
+  var shiftedHorizontalY = anychart.utils.applyPixelShift(drawSettings.horizontalY, thickness);
 
   path.stroke(stroke);
   path.moveTo(
@@ -158,7 +158,7 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
 
   // Arrow head.
   var arrowHeadPath = this.getArrowHeadPath();
-  var isArrowUp = settings.isUp;
+  var isArrowUp = drawSettings.isUp;
   var arrowHeadSize = 10;
   var arrowHeadYDelta = isArrowUp ? -arrowHeadSize : arrowHeadSize;
   arrowHeadPath.moveTo(
@@ -184,20 +184,22 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function(settings) {
 
 /**
  * Draws arrow label.
- *
- * @param {anychart.waterfallModule.Arrow.DrawSettings} settings - Draw settings.
  */
-anychart.waterfallModule.Arrow.prototype.drawLabel = function(settings) {
+anychart.waterfallModule.Arrow.prototype.drawLabel = function() {
   var text = this.getText();
+  var drawSettings = this.drawSettings();
+
   text.renderTo(this.arrowsController_.labelsLayerEl_);
+
   text.putAt(
     new anychart.math.Rect(
-      settings.fromPoint.x,
-      settings.horizontalY,
-      settings.toPoint.x - settings.fromPoint.x,
+      drawSettings.fromPoint.x,
+      drawSettings.horizontalY,
+      drawSettings.toPoint.x - drawSettings.fromPoint.x,
       0
     )
   );
+
   text.finalizeComplexity();
 };
 
@@ -214,15 +216,14 @@ anychart.waterfallModule.Arrow.prototype.clear = function() {
 
 /**
  * Draws arrow.
- *
- * @param {anychart.waterfallModule.Arrow.DrawSettings} settings - Draw settings.
  */
-anychart.waterfallModule.Arrow.prototype.draw = function(settings) {
+anychart.waterfallModule.Arrow.prototype.draw = function() {
   this.clear();
 
-  if (settings.isCorrect) {
-    this.drawConnector(settings);
-    this.drawLabel(settings);
+  if (this.enabled()) {
+    var drawSettings = this.drawSettings();
+    this.drawConnector();
+    this.drawLabel();
   }
 };
 
@@ -295,6 +296,21 @@ anychart.waterfallModule.Arrow.prototype.getText = function() {
   }
 
   return this.text_;
+};
+
+
+/**
+ * Arrow draw settings getter/setter.
+ *
+ * @param {anychart.waterfallModule.Arrow.DrawSettings=} opt_value - Draw settings.
+ * @return {anychart.waterfallModule.Arrow.DrawSettings}
+ */
+anychart.waterfallModule.Arrow.prototype.drawSettings = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    this.drawSettings_ = opt_value;
+  }
+
+  return this.drawSettings_;
 };
 
 
