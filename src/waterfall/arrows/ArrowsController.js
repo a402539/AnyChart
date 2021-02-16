@@ -293,6 +293,71 @@ anychart.waterfallModule.ArrowsController.prototype.getIntersectionDelta = funct
 
 
 /**
+ * Checks if arrow has correct from/to values.
+ * They resolve to correct index values on xScale and are not same.
+ *
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ * @return {boolean}
+ */
+anychart.waterfallModule.ArrowsController.prototype.arrowCorrectFromTo = function(arrow) {
+  var from = arrow.getOption('from');
+  var to = arrow.getOption('to');
+
+  var xScale = this.chart_.xScale();
+  
+  var fromStackIndex = xScale.getIndexByValue(from);
+  var toStackIndex = xScale.getIndexByValue(to);
+
+  var fromToNotEqual = from !== to;
+
+  return !isNaN(fromStackIndex) && !isNaN(toStackIndex) && fromToNotEqual;
+};
+
+
+/**
+ * Returns true if arrow with same from & to values found in the array.
+ *
+ * @param {Array.<anychart.waterfallModule.Arrow>} array - Arrows array.
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ * @return {boolean} - Whether arrow has unique from/to combination.
+ */
+anychart.waterfallModule.ArrowsController.prototype.isArrowUnique = function(array, arrow) {
+  var duplicate = goog.array.find(array, function(item) {
+    return arrow.getOption('from') === item.getOption('from') &&
+      arrow.getOption('to') === item.getOption('to');
+  });
+
+  return goog.isNull(duplicate);
+};
+
+
+/**
+ * Checks if arrows are correct and disables them if they are not.
+ * Incorrect arrows are:
+ *  1) referencing non-existent/missing xScale values
+ *  2) duplicates, with from & to values similar to already existing arrow
+ *  3) with same from & to values
+ */
+anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = function() {
+  var previousArrows = [];
+
+  for (var i = 0; i < this.arrows_.length; i++) {
+    var arrow = this.arrows_[i];
+    var correctFromTo = this.arrowCorrectFromTo(arrow);
+    var isUnique = this.isArrowUnique(previousArrows, arrow);
+    
+    var isArrowCorrect = correctFromTo && isUnique;
+
+    if (!isArrowCorrect) {
+      arrow.enabled(false);
+    }
+
+    previousArrows.push(arrow);
+  }
+};
+
+
+/**
  * 
  * @param {anychart.waterfallModule.Arrow} arrow
  * @param {anychart.waterfallModule.Arrow.DrawSettings} arrowDrawSettings
