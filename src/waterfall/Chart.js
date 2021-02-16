@@ -1175,7 +1175,13 @@ anychart.waterfallModule.Chart.prototype.getStackBottom = function(index) {
 //region --- Series
 /** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.seriesInvalidated = function(event) {
-  this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS);
+  this.invalidateMultiState(
+    anychart.enums.Store.WATERFALL,
+    [
+      anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
+      anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
+    ]
+  );
 
   anychart.waterfallModule.Chart.base(this, 'seriesInvalidated', event);
 };

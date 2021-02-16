@@ -207,7 +207,7 @@ anychart.waterfallModule.ArrowsController.prototype.getAllSeriesLabelsBounds = f
   for (var i = 0; i < seriesCount; i++) {
     var labelsFactory = chart.getSeries(i).labels();
     var label = labelsFactory.getLabel(index);
-    if (label.enabled() || labelsFactory.enabled()) {
+    if (label && (label.enabled() || labelsFactory.enabled())) {
       var labelBounds = label.bounds_;
       bounds.push(labelBounds);
     }
