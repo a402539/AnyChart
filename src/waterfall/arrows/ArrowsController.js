@@ -499,7 +499,7 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
 
   this.applyLabelsStyle();
 
-  // We probably need arrows labels bounds, when calculating arrows positions.
+  // We need arrows labels bounds, when calculating arrows positions.
   this.dispatchSignal(anychart.Signal.MEASURE_BOUNDS | anychart.Signal.MEASURE_COLLECT);
 
   anychart.measuriator.measure();
