@@ -489,6 +489,8 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
     this.arrowsLayer_.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
   }
 
+  this.checkArrowsCorrectness();
+
   this.applyLabelsStyle();
 
   // We probably need arrows labels bounds, when calculating arrows positions.
@@ -498,8 +500,7 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
 
   var drawInfo = this.getDrawInfo();
 
-  for (var i = 0; i < drawInfo.length; i++) {
-    // var di = drawInfo[i];
+  for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
     arrow.container(this.arrowsLayer_);
     arrow.draw();
