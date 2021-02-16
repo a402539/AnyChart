@@ -79,8 +79,6 @@ anychart.waterfallModule.ArrowsController.prototype.addArrowToScaleValuesArray =
   var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
   var toIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('to')));
 
-  var isUp = this.isArrowUp(arrow);
-
   this.xScaleValueToArrows_[fromIndex] = this.xScaleValueToArrows_[fromIndex] || [];
   this.xScaleValueToArrows_[toIndex] = this.xScaleValueToArrows_[toIndex] || [];
 
@@ -174,10 +172,17 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowBounds = function
   // Half of the resulting rect height. 
   var halfSize = (strokeThickness / 2) + gap;
 
+  var isRightDirection = arrowDrawSettings.toPoint.x > arrowDrawSettings.fromPoint.x;
+
+  var startX = isRightDirection ? arrowDrawSettings.fromPoint.x : arrowDrawSettings.toPoint.x;
+  var width = isRightDirection ?
+    arrowDrawSettings.toPoint.x - arrowDrawSettings.fromPoint.x :
+    arrowDrawSettings.fromPoint.x - arrowDrawSettings.toPoint.x;
+
   var arrowBounds = new anychart.math.Rect(
-      arrowDrawSettings.fromPoint.x,
+      startX,
       arrowDrawSettings.horizontalY - halfSize,
-      arrowDrawSettings.toPoint.x - arrowDrawSettings.fromPoint.x,
+      width,
       halfSize * 2
     );
 
@@ -468,6 +473,14 @@ anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = fu
   var width = stackBounds.getWidth();
   var step = width / (arrows.length + 1);
 
+  var upArrows = goog.array.filter(arrows, function(arrow) {
+    return this.isArrowUp(arrow);
+  }, this);
+
+  var downArrows = goog.array.filter(arrows, function(arrow) {
+    return !this.isArrowUp(arrow);
+  }, this);
+
   for (var i = 0; i < arrows.length; i++) {
     var arrow = arrows[i];
     var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
@@ -489,7 +502,16 @@ anychart.waterfallModule.ArrowsController.prototype.positionFromToPoints = funct
   for (var i = 0; i < this.xScaleValueToArrows_.length; i++) {
     var arrows = this.xScaleValueToArrows_[i];
     if (arrows && arrows.length > 1) {
-      this.modifyArrowsFromToPoint(arrows, i);
+      var upArrows = goog.array.filter(arrows, function(arrow) {
+        return this.isArrowUp(arrow);
+      }, this);
+    
+      var downArrows = goog.array.filter(arrows, function(arrow) {
+        return !this.isArrowUp(arrow);
+      }, this);
+
+      this.modifyArrowsFromToPoint(upArrows, i);
+      this.modifyArrowsFromToPoint(downArrows, i);
     }
   }
 };
