@@ -22,6 +22,15 @@ anychart.waterfallModule.ArrowsController = function(chart) {
 
   this.arrowsLayer_ = null;
 
+  /**
+   * Each element of the array is the index of xScale value.
+   * It contains array of arrows with from/to values mapped to this value.
+   * This array is used to position from/to points so, that they do not overlap.
+   *
+   * @type {Array.<Array.<anychart.waterfallModule.Arrow>>}
+   */
+  this.xScaleValueToArrows_ = [];
+
   anychart.measuriator.register(this);
 };
 goog.inherits(anychart.waterfallModule.ArrowsController, anychart.core.VisualBase);
@@ -59,6 +68,33 @@ anychart.waterfallModule.ArrowsController.prototype.isArrowUp = function(arrow) 
   var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
 
   return this.chart_.getStackSum(fromIndex, 'diff') >= 0;
+};
+
+
+/**
+ *
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ */
+anychart.waterfallModule.ArrowsController.prototype.addArrowToScaleValuesArray = function(arrow) {
+  var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
+  var toIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('to')));
+
+  var isUp = this.isArrowUp(arrow);
+
+  this.xScaleValueToArrows_[fromIndex] = this.xScaleValueToArrows_[fromIndex] || [];
+  this.xScaleValueToArrows_[toIndex] = this.xScaleValueToArrows_[toIndex] || [];
+
+  var isRightDirection = toIndex > fromIndex;
+
+  if (arrow.enabled()) {
+    if (isRightDirection) {
+      this.xScaleValueToArrows_[fromIndex].push(arrow);
+      this.xScaleValueToArrows_[toIndex].unshift(arrow);
+    } else {
+      this.xScaleValueToArrows_[fromIndex].unshift(arrow);
+      this.xScaleValueToArrows_[toIndex].push(arrow);
+    }
+  }
 };
 
 
@@ -423,12 +459,50 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
 
 
 /**
+ * 
+ * @param {Array.<anychart.waterfallModule.Arrow>} arrows - Array of arrows.
+ * @param {number} xScaleIndex - Index of the point where arrows intersect.
+ */
+anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = function(arrows, xScaleIndex) {
+  var stackBounds = this.chart_.getStackBounds(xScaleIndex);
+  var width = stackBounds.getWidth();
+  var step = width / (arrows.length + 1);
+
+  for (var i = 0; i < arrows.length; i++) {
+    var arrow = arrows[i];
+    var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
+
+    var xValue = stackBounds.getLeft() + ((i + 1) * step);
+    if (fromIndex === xScaleIndex) {
+      arrow.drawSettings().fromPoint.x = xValue;
+    } else {
+      arrow.drawSettings().toPoint.x = xValue;
+    }
+  }
+};
+
+
+/**
+ * Positions from/to points of arrows so, that they do not overlap.
+ */
+anychart.waterfallModule.ArrowsController.prototype.positionFromToPoints = function() {
+  for (var i = 0; i < this.xScaleValueToArrows_.length; i++) {
+    var arrows = this.xScaleValueToArrows_[i];
+    if (arrows && arrows.length > 1) {
+      this.modifyArrowsFromToPoint(arrows, i);
+    }
+  }
+};
+
+
+/**
  * Only start/end points are calculated here.
  * Horizontal line is calculated separately.
  *
  * @return {Array.<anychart.waterfallModule.Arrow.DrawSettings>}
  */
 anychart.waterfallModule.ArrowsController.prototype.createDrawSettings = function() {
+  this.xScaleValueToArrows_.length = 0;
   var arrowsDrawSettings = [];
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
@@ -439,8 +513,13 @@ anychart.waterfallModule.ArrowsController.prototype.createDrawSettings = functio
       this.fixArrowPosition(arrow, arrowDrawSettings, arrowsDrawSettings) :
       arrowDrawSettings;
 
+    this.addArrowToScaleValuesArray(arrow);
+
     arrowsDrawSettings.push(fixedDrawSettings);
   }
+
+  this.positionFromToPoints();
+
   return arrowsDrawSettings;
 };
 
@@ -493,7 +572,7 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
   var arrowsLayer = this.getArrowsLayer();
 
   var rootLayer = this.getRootLayer();
-  rootLayer.clip(chart.dataBounds);
+  rootLayer.clip(chart.getPlotBounds());
 
   this.checkArrowsCorrectness();
 
@@ -599,6 +678,9 @@ anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = 
 };
 
 
+/**
+ * @return {acgraph.vector.Layer}
+ */
 anychart.waterfallModule.ArrowsController.prototype.getRootLayer = function() {
   if (!this.rootLayer_) {
     this.rootLayer_ = this.container().layer();
