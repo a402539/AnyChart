@@ -72,6 +72,20 @@ anychart.waterfallModule.ArrowsController.prototype.isArrowUp = function(arrow) 
 
 
 /**
+ * If arrow is draw left to right.
+ *
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ * @return {boolean} - Whether arrow is drawn left to right.
+ */
+anychart.waterfallModule.ArrowsController.prototype.isArrowRight = function(arrow) {
+  var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
+  var toIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('to')));
+
+  return toIndex > fromIndex;
+};
+
+
+/**
  *
  * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
  */
@@ -82,7 +96,7 @@ anychart.waterfallModule.ArrowsController.prototype.addArrowToScaleValuesArray =
   this.xScaleValueToArrows_[fromIndex] = this.xScaleValueToArrows_[fromIndex] || [];
   this.xScaleValueToArrows_[toIndex] = this.xScaleValueToArrows_[toIndex] || [];
 
-  var isRightDirection = toIndex > fromIndex;
+  var isRightDirection = this.isArrowRight(arrow);
 
   if (arrow.enabled()) {
     if (isRightDirection) {
@@ -440,6 +454,17 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
     }
   }
 
+  /*
+    Our current arrow bounds must be compared to other (fixed) bounds
+    in following order:
+      1) if arrow is looking up, then in descending order (remember Y values are lowest at the top)
+      2) if arrow is looking down, then in ascending order
+    Doing it like this ensures bounds are poped up/pushed down as far as it is needed.
+   */
+  arrowsDrawSettings.sort(function(prev, next) {
+    return isUp ? next.horizontalY - prev.horizontalY : prev.horizontalY - next.horizontalY;
+  });
+
   for (var i = 0; i < arrowsDrawSettings.length; i++) {
     var fixedDrawSettings = arrowsDrawSettings[i];
     if (!fixedDrawSettings.isCorrect) {
@@ -464,6 +489,31 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
 
 
 /**
+ * Sort function for arrows from/to points positioning.
+ *
+ * @param {anychart.waterfallModule.Arrow} prev - Previous arrow.
+ * @param {anychart.waterfallModule.Arrow} next - Next arrow.
+ * @return {number}
+ */
+anychart.waterfallModule.ArrowsController.prototype.sortArrowsForPointsPositioning = function(prev, next) {
+  var prevIsRight = this.isArrowRight(prev);
+  var nextIsRight = this.isArrowRight(next);
+
+  var isArrowUp = this.isArrowUp(prev);
+
+  // If arrows look in different direction.
+  if (prevIsRight ^ nextIsRight) {
+    // Left looking arrows go before right looking arrows.
+    return prevIsRight ? 1 : -1;
+  } else {
+    return isArrowUp ?
+      prev.drawSettings().horizontalY - next.drawSettings().horizontalY :
+      next.drawSettings().horizontalY - prev.drawSettings().horizontalY;
+  }
+};
+
+
+/**
  * 
  * @param {Array.<anychart.waterfallModule.Arrow>} arrows - Array of arrows.
  * @param {number} xScaleIndex - Index of the point where arrows intersect.
@@ -473,13 +523,10 @@ anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = fu
   var width = stackBounds.getWidth();
   var step = width / (arrows.length + 1);
 
-  var upArrows = goog.array.filter(arrows, function(arrow) {
-    return this.isArrowUp(arrow);
-  }, this);
+  // goog.array.sort does not allow binding context to function somehow.
+  var bindedSortFunction = goog.bind(this.sortArrowsForPointsPositioning, this);
 
-  var downArrows = goog.array.filter(arrows, function(arrow) {
-    return !this.isArrowUp(arrow);
-  }, this);
+  goog.array.sort(arrows, bindedSortFunction);
 
   for (var i = 0; i < arrows.length; i++) {
     var arrow = arrows[i];
