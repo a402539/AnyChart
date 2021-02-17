@@ -21,7 +21,7 @@ anychart.waterfallModule.Arrow = function(controller) {
 
   this.addThemes('waterfall.arrow');
 
-  this.arrowsController_ = controller;
+  this.controller_ = controller;
 
   anychart.core.settings.createDescriptorsMeta(
       this.descriptorsMeta,
@@ -140,46 +140,145 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function() {
   var shiftedHorizontalY = anychart.utils.applyPixelShift(drawSettings.horizontalY, thickness);
 
   path.stroke(stroke);
-  path.moveTo(
+
+  var isVertical = this.controller_.isVertical();
+
+  anychart.core.drawers.move(
+    path,
+    isVertical,
     shiftedFromPoint.x,
     shiftedFromPoint.y
   );
-  path.lineTo(
+  anychart.core.drawers.line(
+    path,
+    isVertical,
     shiftedFromPoint.x,
     shiftedHorizontalY
   );
-  path.lineTo(
+  anychart.core.drawers.line(
+    path,
+    isVertical,
     shiftedToPoint.x,
     shiftedHorizontalY
   );
-  path.lineTo(
+  anychart.core.drawers.line(
+    path,
+    isVertical,
     shiftedToPoint.x,
     shiftedToPoint.y
+  );
+
+
+  // path.moveTo(
+  //   shiftedFromPoint.x,
+  //   shiftedFromPoint.y
+  // );
+  // path.lineTo(
+  //   shiftedFromPoint.x,
+  //   shiftedHorizontalY
+  // );
+  // path.lineTo(
+  //   shiftedToPoint.x,
+  //   shiftedHorizontalY
+  // );
+  // path.lineTo(
+  //   shiftedToPoint.x,
+  //   shiftedToPoint.y
+  // );
+};
+
+
+/**
+ * Draws arrow head.
+ */
+anychart.waterfallModule.Arrow.prototype.drawHead = function() {
+  var stroke = /** @type {acgraph.vector.Stroke|string} */(this.connector().getOption('stroke'));
+  var thickness = anychart.utils.extractThickness(stroke);
+
+  var drawSettings = this.drawSettings();
+
+  var shiftedToPoint = new anychart.math.Point2D(
+    anychart.utils.applyPixelShift(drawSettings.toPoint.x, thickness),
+    anychart.utils.applyPixelShift(drawSettings.toPoint.y, thickness)
   );
 
   // Arrow head.
   var arrowHeadPath = this.getArrowHeadPath();
   var isArrowUp = drawSettings.isUp;
   var arrowHeadSize = 10;
-  var arrowHeadYDelta = isArrowUp ? -arrowHeadSize : arrowHeadSize;
-  arrowHeadPath.moveTo(
+  var arrowHeadYDelta = isArrowUp === this.controller_.normalUpDirection() ? -arrowHeadSize : arrowHeadSize;
+
+  var isVertical = this.controller_.isVertical();
+
+  anychart.core.drawers.move(
+    arrowHeadPath,
+    isVertical,
     shiftedToPoint.x,
     shiftedToPoint.y
   );
-  arrowHeadPath.lineTo(
+  anychart.core.drawers.line(
+    arrowHeadPath,
+    isVertical,
     shiftedToPoint.x - (arrowHeadSize / 2),
     shiftedToPoint.y + arrowHeadYDelta
   );
-  arrowHeadPath.lineTo(
+  anychart.core.drawers.line(
+    arrowHeadPath,
+    isVertical,
     shiftedToPoint.x + (arrowHeadSize / 2),
     shiftedToPoint.y + arrowHeadYDelta
   );
-  arrowHeadPath.lineTo(
+  anychart.core.drawers.line(
+    arrowHeadPath,
+    isVertical,
     shiftedToPoint.x,
     shiftedToPoint.y
   );
+
+  // arrowHeadPath.moveTo(
+  //   shiftedToPoint.x,
+  //   shiftedToPoint.y
+  // );
+  // arrowHeadPath.lineTo(
+  //   shiftedToPoint.x - (arrowHeadSize / 2),
+  //   shiftedToPoint.y + arrowHeadYDelta
+  // );
+  // arrowHeadPath.lineTo(
+  //   shiftedToPoint.x + (arrowHeadSize / 2),
+  //   shiftedToPoint.y + arrowHeadYDelta
+  // );
+  // arrowHeadPath.lineTo(
+  //   shiftedToPoint.x,
+  //   shiftedToPoint.y
+  // );
   arrowHeadPath.fill(stroke);
   arrowHeadPath.stroke('none');
+};
+
+
+/**
+ * Returns bounds in which label is positioned.
+ *
+ * @return {anychart.math.Rect}
+ */
+anychart.waterfallModule.Arrow.prototype.getLabelParentBounds = function() {
+  var drawSettings = this.drawSettings();
+
+  if (this.controller_.isVertical()) {
+    return new anychart.math.Rect(
+      drawSettings.horizontalY,
+      drawSettings.fromPoint.x,
+      0,
+      drawSettings.toPoint.x - drawSettings.fromPoint.x
+    );
+  } else {
+    return new anychart.math.Rect(
+      drawSettings.fromPoint.x,
+      drawSettings.horizontalY,
+      drawSettings.toPoint.x - drawSettings.fromPoint.x,
+      0
+    );
+  }
 };
 
 
@@ -190,16 +289,11 @@ anychart.waterfallModule.Arrow.prototype.drawLabel = function() {
   var text = this.getText();
   var drawSettings = this.drawSettings();
 
-  text.renderTo(this.arrowsController_.labelsLayerEl_);
+  text.renderTo(this.controller_.labelsLayerEl_);
 
-  text.putAt(
-    new anychart.math.Rect(
-      drawSettings.fromPoint.x,
-      drawSettings.horizontalY,
-      drawSettings.toPoint.x - drawSettings.fromPoint.x,
-      0
-    )
-  );
+  var labelParentBounds = this.getLabelParentBounds();
+
+  text.putAt(labelParentBounds);
 
   text.finalizeComplexity();
 };
@@ -222,8 +316,8 @@ anychart.waterfallModule.Arrow.prototype.draw = function() {
   this.clear();
 
   if (this.enabled()) {
-    var drawSettings = this.drawSettings();
     this.drawConnector();
+    this.drawHead();
     this.drawLabel();
   }
 };
@@ -327,7 +421,7 @@ anychart.waterfallModule.Arrow.prototype.connector = function() {
 
 /** @inheritDoc */
 anychart.waterfallModule.Arrow.prototype.disposeInternal = function() {
-  this.arrowsController_ = null;
+  this.controller_ = null;
 
   goog.disposeAll(
     this.arrowPath_,

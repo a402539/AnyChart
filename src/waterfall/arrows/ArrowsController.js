@@ -32,7 +32,7 @@ anychart.waterfallModule.ArrowsController = function(chart) {
    */
   this.xScaleValueToArrows_ = [];
 
-  this.singleInOut_ = true;
+  this.singleInOut_ = false;
 
   anychart.measuriator.register(this);
 };
@@ -48,6 +48,36 @@ anychart.waterfallModule.ArrowsController.prototype.SUPPORTED_SIGNALS =
 anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX = 41;
 
 anychart.waterfallModule.ArrowsController.ARROWS_LABELS_ZINDEX = 42;
+
+
+/**
+ * If chart is in vertical mode.
+ *
+ * @return {boolean}
+ */
+anychart.waterfallModule.ArrowsController.prototype.isVertical = function() {
+  return /** @type {boolean} */(this.chart_.isVertical());
+};
+
+
+/**
+ * If Y scale is inverted.
+ *
+ * @return {boolean}
+ */
+anychart.waterfallModule.ArrowsController.prototype.yScaleInverted = function() {
+  return /** @type {boolean} */(this.chart_.yScale().inverted());
+};
+
+
+/**
+ * If up direction is normal - Y value decreases with Y pixel coordinate increase.
+ *
+ * @return {boolean}
+ */
+anychart.waterfallModule.ArrowsController.prototype.normalUpDirection = function() {
+  return this.isVertical() === this.yScaleInverted();
+};
 
 
 /**
@@ -105,6 +135,7 @@ anychart.waterfallModule.ArrowsController.prototype.isArrowRight = function(arro
 
 
 /**
+ * Group arrows by their from/to values, for in/out points positioning.
  *
  * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
  */
@@ -126,6 +157,28 @@ anychart.waterfallModule.ArrowsController.prototype.addArrowToScaleValuesArray =
       this.xScaleValueToArrows_[toIndex].push(arrow);
     }
   }
+};
+
+
+/**
+ * Like I know what is happening here.
+ *
+ * @param {anychart.math.Rect} bounds - Stack bounds.
+ * @return {number}
+ */
+anychart.waterfallModule.ArrowsController.prototype.getStackBoundsBottom = function(bounds) {
+  return this.normalUpDirection() ? bounds.getBottom() : bounds.getTop();
+};
+
+
+/**
+ * Like I know what is happening here.
+ *
+ * @param {anychart.math.Rect} bounds - Stack bounds.
+ * @return {number}
+ */
+anychart.waterfallModule.ArrowsController.prototype.getStackBoundsTop = function(bounds) {
+  return this.normalUpDirection() ? bounds.getTop() : bounds.getBottom();
 };
 
 
@@ -166,15 +219,15 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowDrawSettings = fu
 
   var fromPoint = new anychart.math.Point2D(
     fromStackBounds.getLeft() + fromStackBounds.getWidth() / 2,
-    isUp ? fromStackBounds.getTop() : fromStackBounds.getBottom()
+    isUp ? this.getStackBoundsTop(fromStackBounds) : this.getStackBoundsBottom(fromStackBounds)
   );
 
   var toPoint = new anychart.math.Point2D(
     toStackBounds.getLeft() + toStackBounds.getWidth() / 2,
-    isUp ? toStackBounds.getTop() : toStackBounds.getBottom()
+    isUp ? this.getStackBoundsTop(toStackBounds) : this.getStackBoundsBottom(toStackBounds)
   );
 
-  var baseHorizontalY = isUp ?
+  var baseHorizontalY = isUp && this.normalUpDirection() ?
     (Math.min(fromPoint.y, toPoint.y) - minimalGap) :
     (Math.max(fromPoint.y, toPoint.y) + minimalGap);
 
@@ -325,15 +378,25 @@ anychart.waterfallModule.ArrowsController.prototype.getSeriesLabelsBounds = func
  */
 anychart.waterfallModule.ArrowsController.prototype.getStackFullBounds = function(index) {
   var chart = this.chart_;
-  var bounds = chart.getStackBounds(index);
+  var stackBounds = chart.getStackBounds(index);
+
+  // Fix negative height, as it breaks some Rect api.
+  if (stackBounds.getHeight() < 0) {
+    stackBounds = new anychart.math.Rect(
+      stackBounds.getLeft(),
+      stackBounds.getTop() + stackBounds.getHeight(),
+      stackBounds.getWidth(),
+      -stackBounds.getHeight()
+    );
+  }
   var seriesLabelsBounds = this.getAllSeriesLabelsBounds(index);
 
   for (var i = 0; i < seriesLabelsBounds.length; i++) {
     var labelBounds = seriesLabelsBounds[i];
-    bounds = goog.math.Rect.boundingRect(bounds, labelBounds);
+    stackBounds = goog.math.Rect.boundingRect(stackBounds, labelBounds);
   }
 
-  return bounds;
+  return stackBounds;
 };
 
 
@@ -364,7 +427,7 @@ anychart.waterfallModule.ArrowsController.prototype.getStacksBounds = function(o
  */
 anychart.waterfallModule.ArrowsController.prototype.getIntersectionDelta = function(fixedBounds, freeBounds, isMovingUp) {
   if (fixedBounds.intersects(freeBounds)) {
-    if (isMovingUp) {
+    if (isMovingUp === this.normalUpDirection()) {
       return fixedBounds.getTop() - freeBounds.getBottom();
     } else {
       return fixedBounds.getBottom() - freeBounds.getTop();
@@ -521,7 +584,7 @@ anychart.waterfallModule.ArrowsController.prototype.sortArrowsForPointsPositioni
   var isArrowUp = this.isArrowUp(prev);
 
   // If arrows look in different direction.
-  if (prevIsRight ^ nextIsRight) {
+  if (prevIsRight !== nextIsRight) {
     // Left looking arrows go before right looking arrows.
     return prevIsRight ? 1 : -1;
   } else {
