@@ -34,6 +34,15 @@ anychart.waterfallModule.totals.Series.prototype.getShapeManager = function() {
   return anychart.waterfallModule.totals.ShapeManager;
 };
 
+/** @inheritDoc */
+anychart.waterfallModule.totals.Series.prototype.postProcessPoint = function(iterator, point, processingMeta) {
+  var totalInstance = iterator.get('totalInstance');
+  if (totalInstance) {
+    point.data['totalInstance'] = totalInstance;
+  }
+};
+
+
 anychart.waterfallModule.totals.Series.prototype.getSeriesConfig = function() {
   var capabilities = (
     anychart.core.series.Capabilities.ALLOW_INTERACTIVITY |

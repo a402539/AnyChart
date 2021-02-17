@@ -183,6 +183,14 @@ anychart.scales.Ordinal.prototype.names = function(opt_value) {
       }
     }
 
+    for (var i = 0; i < this.resultNames_.length; i++) {
+      var customName = this.autoNames_[i];
+
+      if (goog.isDef(customName)) {
+        this.resultNames_[i] = customName;
+      }
+    }
+
     return this.resultNames_;
   } else {
     return this.autoNames_ || [];

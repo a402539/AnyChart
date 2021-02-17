@@ -553,31 +553,61 @@ anychart.core.ChartWithOrthogonalScales.prototype.autoCalcOrdinalXScale = functi
 
 
 /**
- * Finish ordinal x scale calculation.
- * Calculates auto names, depends on from-data-field for ordinal scale.
- * @param {anychart.scales.Ordinal} xScale
- * @param {Array.<Object>} drawingPlans
+ * Returns array of auto names that must be taken from data by specified field.
+ *
+ * @param {string=} field - Name of field that contain name.
+ * @param {Array.<Object>} drawingPlans - Drawing plans.
+ * @return {Array.<string>}
  */
-anychart.core.ChartWithOrthogonalScales.prototype.finishOrdinalXScaleCalculation = function(xScale, drawingPlans) {
+anychart.core.ChartWithOrthogonalScales.prototype.getAutoNamesForXScale = function(field, drawingPlans) {
   var i, j, val;
-  var namesField = xScale.getNamesField();
+  var remainingNames = drawingPlans[0].xArray.length;
+  var autoNames = new Array(remainingNames);
   // retrieving names
-  if (namesField) {
-    var remainingNames = drawingPlans[0].xArray.length;
-    var autoNames = new Array(remainingNames);
+  if (field) {
     for (i = 0; i < drawingPlans.length; i++) {
       var drawingPlanData = drawingPlans[i].data;
       if (remainingNames > 0) {
         for (j = 0; j < drawingPlanData.length; j++) {
-          if (!goog.isDef(autoNames[j]) && goog.isDef(val = drawingPlanData[j].data[namesField])) {
+          if (!goog.isDef(autoNames[j]) && goog.isDef(val = drawingPlanData[j].data[field])) {
             autoNames[j] = val;
             remainingNames--;
           }
         }
       }
     }
+  }
+
+  return autoNames;
+};
+
+
+/**
+ * Set names for x scale.
+ *
+ * @param {Array.<string>} autoNames - Array with names.
+ * @param {anychart.scales.Ordinal} xScale - Ordinal scale for names setup.
+ */
+anychart.core.ChartWithOrthogonalScales.prototype.setAutoNamesForXScale = function (autoNames, xScale) {
+  var hasItems = goog.array.some(autoNames, function (name) {
+    return goog.isDef(name);
+  });
+
+  if (hasItems) {
     xScale.setAutoNames(autoNames);
   }
+};
+
+
+/**
+ * Finish ordinal x scale calculation.
+ * Calculates auto names, depends on from-data-field for ordinal scale.
+ * @param {anychart.scales.Ordinal} xScale
+ * @param {Array.<Object>} drawingPlans
+ */
+anychart.core.ChartWithOrthogonalScales.prototype.finishOrdinalXScaleCalculation = function (xScale, drawingPlans) {
+  var autoNames = this.getAutoNamesForXScale(xScale.getNamesField(), drawingPlans);
+  this.setAutoNamesForXScale(autoNames, xScale);
 };
 
 

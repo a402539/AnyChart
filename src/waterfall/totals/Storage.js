@@ -242,7 +242,7 @@ anychart.waterfallModule.totals.Storage.prototype.handleEvent = function(event) 
   }
 };
 
-//region --- Public API
+
 /**
  * Create, setup and return instance of total.
  * @param {{}} config - Configuration object for total.
@@ -259,7 +259,7 @@ anychart.waterfallModule.totals.Storage.prototype.createTotal = function(config)
   return total;
 };
 
-
+//region --- Public API
 /**
  * Create instance of Total class setup it by passed config and return it.
  *
@@ -271,14 +271,6 @@ anychart.waterfallModule.totals.Storage.prototype.createTotal = function(config)
  * @return {anychart.waterfallModule.totals.Total} - Total instance.
  */
 anychart.waterfallModule.totals.Storage.prototype.addTotal = function(totalConfig) {
-  var alreadyAdded = goog.array.find(this.totals_, function(total) {
-    return total.getOption('x') == totalConfig.x;
-  });
-
-  if (alreadyAdded) {
-    return alreadyAdded;
-  }
-
   var total = this.createTotal(totalConfig);
 
   this.totals_.push(total);
