@@ -537,8 +537,14 @@ anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = fun
  * @return {anychart.waterfallModule.Arrow.DrawSettings}
  */
 anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(arrow, arrowDrawSettings, arrowsDrawSettings) {
+  /*
+    Clone array, because we are going to sort it and it might break other
+    parts, which relay on strict order of bounds.
+   */
   var stackBounds = goog.array.clone(this.getStacksBounds());
   var isUp = this.isArrowUp(arrow);
+  var isNormalUpDirection = this.normalUpDirection();
+
   var newDrawSettings = {
     fromPoint: arrowDrawSettings.fromPoint,
     toPoint: arrowDrawSettings.toPoint,
@@ -550,9 +556,11 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
   var arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
   var arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
 
-  var self = this;
+  /*
+    Ensure we always go from the lowest lying to highest lying stack bounds.
+   */
   stackBounds.sort(function(prev, next) {
-    return isUp === self.normalUpDirection() ?
+    return isUp === isNormalUpDirection ?
       next.getBottom() - prev.getBottom() :
       prev.getTop() - next.getTop();
   });
