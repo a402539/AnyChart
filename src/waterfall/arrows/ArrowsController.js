@@ -81,6 +81,14 @@ anychart.waterfallModule.ArrowsController.prototype.normalUpDirection = function
 
 
 /**
+ * Checks if right direction is not inverted.
+ */
+anychart.waterfallModule.ArrowsController.prototype.normalRightDirection = function() {
+  return this.isVertical() === this.chart_.xScale().inverted();
+};
+
+
+/**
  * Is single positions for in and out points should be used.
  * @param {boolean=} opt_value - If single positions on stack for in/out.
  * @return {boolean}
@@ -533,14 +541,9 @@ anychart.waterfallModule.ArrowsController.prototype.positionArrow = function(arr
   });
 
   for (var i = 0; i < positionedArrows.length; i++) {
-    var fixedDrawSettings = positionedArrows[i].drawSettings();
-    var positionedArrow = positionedArrows[i];
+    var positionedArrowDrawSettings = positionedArrows[i].drawSettings();
 
-    if (!positionedArrow.enabled()) {
-      continue;
-    }
-
-    var fixedBounds = this.createArrowBounds(fixedDrawSettings, arrow);
+    var fixedBounds = this.createArrowBounds(positionedArrowDrawSettings, arrow);
 
     var delta = this.getIntersectionDelta(fixedBounds, arrowBounds, isUp);
 
@@ -581,6 +584,20 @@ anychart.waterfallModule.ArrowsController.prototype.sortArrowsForPointsPositioni
 
 
 /**
+ * If arrow is drawn to 
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ * @param {number} xScaleIndex - Index of the xScale item, against which we check rightness.
+ * @return {boolean}
+ */
+anychart.waterfallModule.ArrowsController.prototype.isArrowRightOfStack = function(arrow, xScaleIndex) {
+  var fromIndex = this.getIndexFromValue(arrow.getOption('from'));
+  var toIndex = this.getIndexFromValue(arrow.getOption('to'));
+
+  return Math.min(fromIndex, toIndex, xScaleIndex) === xScaleIndex;
+};
+
+
+/**
  *
  * @param {Array.<anychart.waterfallModule.Arrow>} arrows - Array of arrows.
  * @param {number} xScaleIndex - Index of the point where arrows intersect.
@@ -593,7 +610,20 @@ anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = fu
   // goog.array.sort does not allow binding context to function somehow.
   var bindedSortFunction = goog.bind(this.sortArrowsForPointsPositioning, this);
 
-  goog.array.sort(arrows, bindedSortFunction);
+  // goog.array.sort(arrows, bindedSortFunction);
+  goog.array.sort(arrows, (prev, next) => {
+    var isPrevRight = this.isArrowRightOfStack(prev, xScaleIndex);
+    var isNextRight = this.isArrowRightOfStack(next, xScaleIndex);
+    var isArrowUp = this.isArrowUp(prev);
+
+    if (isPrevRight !== isNextRight) {
+      return isPrevRight === this.normalRightDirection() ? 1 : -1;
+    } else {
+      return isArrowUp === this.normalUpDirection() ?
+        prev.drawSettings().horizontalY - next.drawSettings().horizontalY :
+        next.drawSettings().horizontalY - prev.drawSettings().horizontalY;
+    }
+  });
 
   var singleInOut = this.singleInOut_;
   var inPosition = stackBounds.getLeft() + (stackBounds.getWidth() / 3);
