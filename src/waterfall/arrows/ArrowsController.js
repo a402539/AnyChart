@@ -314,6 +314,7 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowTextBounds = func
     anchor
   );
 
+  // TODO: this.isVertical() check.
   var textActualBounds = new anychart.math.Rect(
     textPosition.left,
     textPosition.top,
@@ -336,6 +337,7 @@ anychart.waterfallModule.ArrowsController.prototype.getAllSeriesLabelsBounds = f
   for (var i = 0; i < seriesCount; i++) {
     var labelsFactory = chart.getSeries(i).labels();
     var label = labelsFactory.getLabel(index);
+    // TODO: label.enabled() === false will fail here.
     if (label && (label.enabled() || labelsFactory.enabled())) {
       var labelBounds = label.bounds_;
       if (labelBounds.getHeight() < 0 || labelBounds.getWidth() < 0) {
@@ -535,7 +537,7 @@ anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = fun
  * @return {anychart.waterfallModule.Arrow.DrawSettings}
  */
 anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(arrow, arrowDrawSettings, arrowsDrawSettings) {
-  var stackBounds = this.getStacksBounds();
+  var stackBounds = goog.array.clone(this.getStacksBounds());
   var isUp = this.isArrowUp(arrow);
   var newDrawSettings = {
     fromPoint: arrowDrawSettings.fromPoint,
