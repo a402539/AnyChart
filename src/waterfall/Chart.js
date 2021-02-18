@@ -104,13 +104,13 @@ anychart.waterfallModule.Chart.SUPPORTED_STATES = {
 
 
 anychart.consistency.supportStates(
-  anychart.waterfallModule.Chart,
-  anychart.enums.Store.WATERFALL,
-  [
-    anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS,
-    anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
-    anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS
-  ]
+    anychart.waterfallModule.Chart,
+    anychart.enums.Store.WATERFALL,
+    [
+      anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS,
+      anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
+      anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS
+    ]
 );
 
 
@@ -121,11 +121,11 @@ anychart.consistency.supportStates(
  */
 anychart.waterfallModule.Chart.prototype.seriesConfig = (function() {
   var capabilities = (
-    anychart.core.series.Capabilities.ALLOW_INTERACTIVITY |
-    anychart.core.series.Capabilities.ALLOW_POINT_SETTINGS |
-    // anychart.core.series.Capabilities.ALLOW_ERROR |
-    anychart.core.series.Capabilities.SUPPORTS_MARKERS |
-    anychart.core.series.Capabilities.SUPPORTS_LABELS | 0);
+      anychart.core.series.Capabilities.ALLOW_INTERACTIVITY |
+      anychart.core.series.Capabilities.ALLOW_POINT_SETTINGS |
+      // anychart.core.series.Capabilities.ALLOW_ERROR |
+      anychart.core.series.Capabilities.SUPPORTS_MARKERS |
+      anychart.core.series.Capabilities.SUPPORTS_LABELS | 0);
 
   var res = {};
   res[anychart.enums.WaterfallSeriesType.WATERFALL] = {
@@ -163,8 +163,7 @@ anychart.waterfallModule.Chart.prototype.getYScaleStackMode = function(yScale) {
 
 
 /** @inheritDoc */
-anychart.waterfallModule.Chart.prototype.extendYScaleRange = function(scale, value) {
-};
+anychart.waterfallModule.Chart.prototype.extendYScaleRange = function(scale, value) {};
 
 
 /** @inheritDoc */
@@ -397,10 +396,10 @@ anychart.waterfallModule.Chart.PROPERTY_DESCRIPTORS = (function() {
   /** @type {!Object.<string, anychart.core.settings.PropertyDescriptor>} */
   var map = {};
   anychart.core.settings.createDescriptor(
-    map,
-    anychart.enums.PropertyHandlerType.SINGLE_ARG,
-    'dataMode',
-    anychart.enums.normalizeWaterfallDataMode);
+      map,
+      anychart.enums.PropertyHandlerType.SINGLE_ARG,
+      'dataMode',
+      anychart.enums.normalizeWaterfallDataMode);
   return map;
 })();
 anychart.core.settings.populate(anychart.waterfallModule.Chart, anychart.waterfallModule.Chart.PROPERTY_DESCRIPTORS);
@@ -527,7 +526,6 @@ anychart.waterfallModule.Chart.prototype.getPositionProviderForStackedLabel = fu
   x = this.isVertical() ? y : x;
   y = this.isVertical() ? tmpX : y;
 
-
   return {
     'value': {
       x: x,
@@ -548,7 +546,7 @@ anychart.waterfallModule.Chart.prototype.getPositionProviderForStackedLabel = fu
 anychart.waterfallModule.Chart.prototype.getPositionProviderForConnectorLabel = function(connectorIndex, position) {
   var connectorBounds = this.getConnectorBounds(connectorIndex);
 
-  return {'value': anychart.utils.getCoordinateByAnchor(connectorBounds, position)};
+  return { 'value': anychart.utils.getCoordinateByAnchor(connectorBounds, position) };
 };
 
 
@@ -565,8 +563,8 @@ anychart.waterfallModule.Chart.prototype.resolveAnchorForConnectorLabels = funct
   if (anchor === anychart.enums.Anchor.AUTO) {
     if (position === anychart.enums.Position.AUTO) {
       var anchors = this.isVertical() ?
-        [anychart.enums.Anchor.LEFT_CENTER, anychart.enums.Anchor.RIGHT_CENTER] :
-        [anychart.enums.Anchor.CENTER_BOTTOM, anychart.enums.Anchor.CENTER_TOP];
+          [anychart.enums.Anchor.LEFT_CENTER, anychart.enums.Anchor.RIGHT_CENTER] :
+          [anychart.enums.Anchor.CENTER_BOTTOM, anychart.enums.Anchor.CENTER_TOP];
       anchor = stackContribution >= 0 ? anchors[0] : anchors[1];
     } else if (position === anychart.enums.Position.CENTER) {
       anchor = anychart.enums.Anchor.CENTER;
@@ -589,8 +587,8 @@ anychart.waterfallModule.Chart.prototype.resolveAnchorForConnectorLabels = funct
 anychart.waterfallModule.Chart.prototype.resolvePositionForConnectorLabels = function(position, stackContribution) {
   if (position === anychart.enums.Position.AUTO) {
     var positions = this.isVertical() ?
-      [anychart.enums.Position.RIGHT_CENTER, anychart.enums.Position.LEFT_CENTER] :
-      [anychart.enums.Position.CENTER_TOP, anychart.enums.Position.CENTER_BOTTOM];
+        [anychart.enums.Position.RIGHT_CENTER, anychart.enums.Position.LEFT_CENTER] :
+        [anychart.enums.Position.CENTER_TOP, anychart.enums.Position.CENTER_BOTTOM];
     return stackContribution >= 0 ? positions[0] : positions[1];
   }
 
@@ -687,9 +685,9 @@ anychart.waterfallModule.Chart.prototype.updateConnectorsLabels = function() {
 
       var positionProvider = this.getPositionProviderForConnectorLabel(connectorIndex, labelPosition);
       var formatProvider = this.getFormatProviderForConnectorLabel(
-        index,
-        /** @type {number} */(lastNonMissingIndex)
-      );
+          index,
+          /** @type {number} */(lastNonMissingIndex)
+          );
 
       var label = connectorsLabels.add(formatProvider, positionProvider, connectorIndex);
 
@@ -712,10 +710,10 @@ anychart.waterfallModule.Chart.prototype.drawConnectorsLabels = function() {
   var boundsInvalidated = this.hasInvalidationState(anychart.ConsistencyState.BOUNDS);
 
   var connectorsLabelsInvalidated = boundsInvalidated ||
-    this.hasStateInvalidation(
-      anychart.enums.Store.WATERFALL,
-      anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS
-    );
+      this.hasStateInvalidation(
+          anychart.enums.Store.WATERFALL,
+          anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS
+      );
 
   var connectorsLabels = this.connectors().labels();
   if (connectorsLabelsInvalidated) {
@@ -783,10 +781,10 @@ anychart.waterfallModule.Chart.prototype.drawStackLabels = function() {
   var boundsInvalidated = this.hasInvalidationState(anychart.ConsistencyState.BOUNDS);
 
   var stackLabelsInvalidated = boundsInvalidated ||
-    this.hasStateInvalidation(
-      anychart.enums.Store.WATERFALL,
-      anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS
-    );
+      this.hasStateInvalidation(
+          anychart.enums.Store.WATERFALL,
+          anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS
+      );
 
   var stackLabels = this.stackLabels();
   if (stackLabelsInvalidated) {
@@ -815,11 +813,11 @@ anychart.waterfallModule.Chart.prototype.drawLabels = function() {
   this.drawConnectorsLabels();
 
   this.markMultiStateConsistent(
-    anychart.enums.Store.WATERFALL,
-    [
-      anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
-      anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS
-    ]
+      anychart.enums.Store.WATERFALL,
+      [
+        anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
+        anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS
+      ]
   );
 };
 
@@ -1060,8 +1058,8 @@ anychart.waterfallModule.Chart.prototype.getStackSum = function(index, metaField
       if (iterator.meta('missing')) return sum;
 
       var value = opt_treatDiffAsAbsForTotal ?
-        this.getPointStackingValue(iterator.getCurrentPoint()) :
-        iterator.meta(metaFieldName);
+          this.getPointStackingValue(iterator.getCurrentPoint()) :
+          iterator.meta(metaFieldName);
 
       return sum + value;
     }
@@ -1174,8 +1172,8 @@ anychart.waterfallModule.Chart.prototype.connectorStroke = function(opt_strokeOr
   anychart.core.reporting.warning(anychart.enums.WarningCode.DEPRECATED, null, ['chart.connectorStroke()', 'chart.connectors().stroke()'], true);
   var c = this.connectors();
   return arguments.length ?
-    (c['stroke'].apply(c, arguments) && this) :
-    c['stroke']();
+      (c['stroke'].apply(c, arguments) && this) :
+      c['stroke']();
 };
 
 
@@ -1216,9 +1214,9 @@ anychart.waterfallModule.Chart.prototype.connectorsInvalidated = function(event)
   // Connector labels invalidated.
   if (event.hasSignal(anychart.Signal.NEEDS_REDRAW_LABELS)) {
     this.invalidateState(
-      anychart.enums.Store.WATERFALL,
-      anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS,
-      anychart.Signal.NEEDS_REDRAW
+        anychart.enums.Store.WATERFALL,
+        anychart.waterfallModule.Chart.SUPPORTED_STATES.CONNECTORS_LABELS,
+        anychart.Signal.NEEDS_REDRAW
     );
   }
 };
@@ -1239,8 +1237,8 @@ anychart.waterfallModule.Chart.prototype.getConnectorBounds = function(index) {
   var y2 = Math.max(connectorPosition.y2, connectorPosition.y1);
 
   var connectorBounds = this.isVertical() ?
-    anychart.math.rect(y1, x1, y2 - y1, x2 - x1) :
-    anychart.math.rect(x1, y1, x2 - x1, y2 - y1);
+      anychart.math.rect(y1, x1, y2 - y1, x2 - x1) :
+      anychart.math.rect(x1, y1, x2 - x1, y2 - y1);
 
   return connectorBounds;
 };
@@ -1277,7 +1275,6 @@ anychart.waterfallModule.Chart.prototype.getAllTotals = function() {
 };
 
 anychart.waterfallModule.Chart.prototype.totalsStorageInvalidated = function() {
-  console.log('signal from total storage');
   this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS);
 
   var stateToInvalidate =
@@ -1304,7 +1301,7 @@ anychart.waterfallModule.Chart.prototype.drawTotals = function() {
 anychart.waterfallModule.Chart.prototype.updateTotalsStorage = function() {
   if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS)) {
     var seriesWithData = goog.array.filter(this.seriesList, function(series) {
-      return series && series.data();
+      return series && series.enabled() && series.data();
     });
 
     var datasets = goog.array.map(seriesWithData, function(series) {
@@ -1438,11 +1435,11 @@ anychart.waterfallModule.Chart.prototype.setupByJSON = function(config, opt_defa
 /** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.disposeInternal = function() {
   goog.disposeAll(
-    this.stackLabels_,
-    this.stackLabelsLayer_,
-    this.connectorPath_,
-    this.connectorsLabelsLayer_,
-    this.connectors_
+      this.stackLabels_,
+      this.stackLabelsLayer_,
+      this.connectorPath_,
+      this.connectorsLabelsLayer_,
+      this.connectors_
   );
   anychart.waterfallModule.Chart.base(this, 'disposeInternal');
 };

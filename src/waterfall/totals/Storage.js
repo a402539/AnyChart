@@ -210,7 +210,6 @@ anychart.waterfallModule.totals.Storage.prototype.setCategories = function(categ
 };
 
 anychart.waterfallModule.totals.Storage.prototype.totalInvalidated = function() {
-  console.log('signal from total');
   this.dispatchSignal(anychart.Signal.NEEDS_REDRAW_APPEARANCE);
 };
 

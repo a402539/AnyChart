@@ -614,7 +614,7 @@ anychart.core.ChartWithOrthogonalScales.prototype.finishOrdinalXScaleCalculation
 /**
  * Returns array of scale dependent elements.
  *
- * @return {!Array<anychart.scales.Base>}
+ * @return {!Array<anychart.core.Series>}
  */
 anychart.core.ChartWithOrthogonalScales.prototype.getDrawableWithScales = function () {
   return this.seriesList;
