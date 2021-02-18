@@ -337,15 +337,39 @@ anychart.waterfallModule.ArrowsController.prototype.getAllSeriesLabelsBounds = f
     var labelsFactory = chart.getSeries(i).labels();
     var label = labelsFactory.getLabel(index);
     if (label && (label.enabled() || labelsFactory.enabled())) {
-      // TODO: private property access!
       var labelBounds = label.bounds_;
+      if (labelBounds.getHeight() < 0 || labelBounds.getWidth() < 0) {
+        console.log(labelBounds);
+      }
+      if (this.isVertical()) {
+        labelBounds = new anychart.math.Rect(
+          labelBounds.getTop(),
+          labelBounds.getLeft(),
+          labelBounds.getHeight(),
+          labelBounds.getWidth()
+        );
+      }
       bounds.push(labelBounds);
     }
   }
 
   if (chart.stackLabels().enabled()) {
-    // TODO: private property access!
-    bounds.push(chart.stackLabels().getLabel(index).bounds_);
+    var label = chart.stackLabels().getLabel(index);
+    if (label) {
+      var labelBounds = label.bounds_;
+      if (labelBounds.getHeight() < 0 || labelBounds.getWidth() < 0) {
+        console.log(labelBounds);
+      }
+      if (this.isVertical()) {
+        labelBounds = new anychart.math.Rect(
+          labelBounds.getTop(),
+          labelBounds.getLeft(),
+          labelBounds.getHeight(),
+          labelBounds.getWidth()
+        );
+      }
+      bounds.push(labelBounds);
+    }
   }
 
   return bounds;
@@ -523,6 +547,13 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
 
   var arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
   var arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
+
+  var self = this;
+  stackBounds.sort(function(prev, next) {
+    return isUp === self.normalUpDirection() ?
+      next.getBottom() - prev.getBottom() :
+      prev.getTop() - next.getTop();
+  });
 
   for (var i = 0; i < stackBounds.length; i++) {
     var sb = stackBounds[i];
