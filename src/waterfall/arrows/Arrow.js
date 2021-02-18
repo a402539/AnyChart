@@ -42,7 +42,6 @@ goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
   *   fromPoint: anychart.math.Point2D,
   *   toPoint: anychart.math.Point2D,
   *   horizontalY: number,
-  *   isCorrect: boolean,
   *   isUp: boolean
   *}}
   */

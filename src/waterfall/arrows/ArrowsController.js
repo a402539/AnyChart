@@ -121,7 +121,7 @@ anychart.waterfallModule.ArrowsController.prototype.isArrowUp = function(arrow) 
 
 
 /**
- * If arrow is draw left to right.
+ * If arrow is drawn left to right.
  *
  * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
  * @return {boolean} - Whether arrow is drawn left to right.
@@ -161,32 +161,9 @@ anychart.waterfallModule.ArrowsController.prototype.addArrowToScaleValuesArray =
 
 
 /**
- * Like I know what is happening here.
- *
- * @param {anychart.math.Rect} bounds - Stack bounds.
- * @return {number}
- */
-anychart.waterfallModule.ArrowsController.prototype.getStackBoundsBottom = function(bounds) {
-  return this.normalUpDirection() ? bounds.getBottom() : bounds.getTop();
-};
-
-
-/**
- * Like I know what is happening here.
- *
- * @param {anychart.math.Rect} bounds - Stack bounds.
- * @return {number}
- */
-anychart.waterfallModule.ArrowsController.prototype.getStackBoundsTop = function(bounds) {
-  return this.normalUpDirection() ? bounds.getTop() : bounds.getBottom();
-};
-
-
-/**
  * Returns arrows draw settings.
  *
  * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
- * @return {anychart.waterfallModule.Arrow.DrawSettings}
  */
 anychart.waterfallModule.ArrowsController.prototype.createArrowDrawSettings = function(arrow) {
   var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
@@ -197,47 +174,44 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowDrawSettings = fu
   var fromStackBounds = stackBounds[fromIndex];
   var toStackBounds = stackBounds[toIndex];
 
-  // Minimal gap from start/end point to the horizontal line.
-  var minimalGap = 15;
+  var drawSettings;
 
-  var isCorrect = !goog.isNull(fromStackBounds) &&
-    !goog.isNull(toStackBounds) &&
-    !isNaN(fromIndex) &&
-    !isNaN(toIndex);
-
-  if (!isCorrect) {
-    return {
+  if (arrow.enabled()) {
+    // Minimal gap from start/end point to the horizontal line.
+    var minimalGap = 15;
+    var isUp = this.chart_.getStackSum(fromIndex, 'diff') >= 0;
+    var normalUpDirection = this.normalUpDirection();
+  
+    var fromPoint = new anychart.math.Point2D(
+      fromStackBounds.getLeft() + fromStackBounds.getWidth() / 2,
+      isUp === normalUpDirection ? fromStackBounds.getTop() : fromStackBounds.getBottom()
+    );
+  
+    var toPoint = new anychart.math.Point2D(
+      toStackBounds.getLeft() + toStackBounds.getWidth() / 2,
+      isUp === normalUpDirection ? toStackBounds.getTop() : toStackBounds.getBottom()
+    );
+  
+    var baseHorizontalY = isUp && this.normalUpDirection() ?
+      (Math.min(fromPoint.y, toPoint.y) - minimalGap) :
+      (Math.max(fromPoint.y, toPoint.y) + minimalGap);
+  
+    drawSettings = {
+      fromPoint: fromPoint,
+      toPoint: toPoint,
+      horizontalY: baseHorizontalY,
+      isUp: isUp
+    };
+  } else {
+    drawSettings = {
       fromPoint: null,
       toPoint: null,
       horizontalY: 0,
-      isUp: false,
-      isCorrect: false
+      isUp: false
     };
   }
 
-  var isUp = this.chart_.getStackSum(fromIndex, 'diff') >= 0;
-
-  var fromPoint = new anychart.math.Point2D(
-    fromStackBounds.getLeft() + fromStackBounds.getWidth() / 2,
-    isUp ? this.getStackBoundsTop(fromStackBounds) : this.getStackBoundsBottom(fromStackBounds)
-  );
-
-  var toPoint = new anychart.math.Point2D(
-    toStackBounds.getLeft() + toStackBounds.getWidth() / 2,
-    isUp ? this.getStackBoundsTop(toStackBounds) : this.getStackBoundsBottom(toStackBounds)
-  );
-
-  var baseHorizontalY = isUp && this.normalUpDirection() ?
-    (Math.min(fromPoint.y, toPoint.y) - minimalGap) :
-    (Math.max(fromPoint.y, toPoint.y) + minimalGap);
-
-  return {
-    fromPoint: fromPoint,
-    toPoint: toPoint,
-    horizontalY: baseHorizontalY,
-    isCorrect: isCorrect,
-    isUp: isUp
-  };
+  arrow.drawSettings(drawSettings);
 };
 
 
@@ -255,6 +229,7 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowBounds = function
   var strokeThickness = anychart.utils.extractThickness(stroke);
 
   var gap = 2;
+
   // Half of the resulting rect height.
   var halfSize = (strokeThickness / 2) + gap;
 
@@ -271,19 +246,6 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowBounds = function
       width,
       halfSize * 2
     );
-
-  // var text = arrow.getText();
-
-  // var textBounds = text.getBounds();
-
-  // var textPosition = text.getTextPosition(arrowBounds, textBounds.height, arrow.label().position(), arrow.label().anchor());
-
-  // var textActualBounds = new anychart.math.Rect(
-  //   textPosition.left,
-  //   textPosition.top,
-  //   textBounds.width,
-  //   textBounds.height
-  // );
 
   var textActualBounds = this.createArrowTextBounds(arrow, arrowBounds);
 
@@ -374,25 +336,6 @@ anychart.waterfallModule.ArrowsController.prototype.getAllSeriesLabelsBounds = f
     }
   }
 
-  return bounds;
-};
-
-
-/**
- * @return {Array.<anychart.math.Rect>}
- */
-anychart.waterfallModule.ArrowsController.prototype.getSeriesLabelsBounds = function() {
-  var chart = this.chart_;
-  var seriesCount = chart.getSeriesCount();
-
-  var bounds = [];
-  var boundingRect = null;
-  for (var i = 0; i < chart.getStacksCount(); i++) {
-    var allBounds = this.getAllSeriesLabelsBounds(i);
-    boundingRect = goog.array.reduce(allBounds, function(accumulator, curValue) {
-      return goog.math.Rect.boundingRect(accumulator, curValue);
-    }, boundingRect);
-  }
   return bounds;
 };
 
@@ -520,9 +463,7 @@ anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = fun
 
     var isArrowCorrect = correctFromTo && isUnique;
 
-    if (!isArrowCorrect) {
-      arrow.enabled(false);
-    }
+    arrow.enabled(isArrowCorrect);
 
     previousArrows.push(arrow);
   }
@@ -530,13 +471,13 @@ anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = fun
 
 
 /**
+ * Checks arrow for intersection with stacks and other arrows.
+ * Updates arrow draw settings.
  *
- * @param {anychart.waterfallModule.Arrow} arrow
- * @param {anychart.waterfallModule.Arrow.DrawSettings} arrowDrawSettings
- * @param {Array.<anychart.waterfallModule.Arrow.DrawSettings>} arrowsDrawSettings
- * @return {anychart.waterfallModule.Arrow.DrawSettings}
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow to position.
+ * @param {Array.<anychart.waterfallModule.Arrow>} positionedArrows - Already positioned arrows.
  */
-anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(arrow, arrowDrawSettings, arrowsDrawSettings) {
+anychart.waterfallModule.ArrowsController.prototype.positionArrow = function(arrow, positionedArrows) {
   /*
     Clone array, because we are going to sort it and it might break other
     parts, which relay on strict order of bounds.
@@ -545,16 +486,16 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
   var isUp = this.isArrowUp(arrow);
   var isNormalUpDirection = this.normalUpDirection();
 
+  var arrowDrawSettings = arrow.drawSettings();
+
   var newDrawSettings = {
     fromPoint: arrowDrawSettings.fromPoint,
     toPoint: arrowDrawSettings.toPoint,
     horizontalY: arrowDrawSettings.horizontalY,
-    isCorrect: arrowDrawSettings.isCorrect,
     isUp: arrowDrawSettings.isUp
   };
 
   var arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
-  var arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
 
   /*
     Ensure we always go from the lowest lying to highest lying stack bounds.
@@ -573,7 +514,6 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
       newDrawSettings.horizontalY += delta;
 
       arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
-      arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
     }
   }
 
@@ -584,15 +524,22 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
       2) if arrow is looking down, then in ascending order
     Doing it like this ensures bounds are poped up/pushed down as far as it is needed.
    */
-  arrowsDrawSettings.sort(function(prev, next) {
-    return isUp ? next.horizontalY - prev.horizontalY : prev.horizontalY - next.horizontalY;
+  positionedArrows.sort(function(prev, next) {
+    var prevDrawSettings = prev.drawSettings();
+    var nextDrawSettings = next.drawSettings();
+    return isUp ?
+      nextDrawSettings.horizontalY - prevDrawSettings.horizontalY :
+      prevDrawSettings.horizontalY - nextDrawSettings.horizontalY;
   });
 
-  for (var i = 0; i < arrowsDrawSettings.length; i++) {
-    var fixedDrawSettings = arrowsDrawSettings[i];
-    if (!fixedDrawSettings.isCorrect) {
+  for (var i = 0; i < positionedArrows.length; i++) {
+    var fixedDrawSettings = positionedArrows[i].drawSettings();
+    var positionedArrow = positionedArrows[i];
+
+    if (!positionedArrow.enabled()) {
       continue;
     }
+
     var fixedBounds = this.createArrowBounds(fixedDrawSettings, arrow);
 
     var delta = this.getIntersectionDelta(fixedBounds, arrowBounds, isUp);
@@ -601,13 +548,10 @@ anychart.waterfallModule.ArrowsController.prototype.fixArrowPosition = function(
       newDrawSettings.horizontalY += delta;
 
       arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
-      arrowTextBounds = this.createArrowTextBounds(arrow, arrowBounds);
     }
   }
 
   arrow.drawSettings(newDrawSettings);
-
-  return newDrawSettings;
 };
 
 
@@ -701,35 +645,26 @@ anychart.waterfallModule.ArrowsController.prototype.positionFromToPoints = funct
  * @return {Array.<anychart.waterfallModule.Arrow.DrawSettings>}
  */
 anychart.waterfallModule.ArrowsController.prototype.createDrawSettings = function() {
+  this.getStacksBounds(true);
   this.xScaleValueToArrows_.length = 0;
-  var arrowsDrawSettings = [];
+  var positionedArrows = [];
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
 
-    var arrowDrawSettings = this.createArrowDrawSettings(arrow);
-
-    var fixedDrawSettings = arrowDrawSettings.isCorrect ?
-      this.fixArrowPosition(arrow, arrowDrawSettings, arrowsDrawSettings) :
-      arrowDrawSettings;
-
-    this.addArrowToScaleValuesArray(arrow);
-
-    arrowsDrawSettings.push(fixedDrawSettings);
+    if (arrow.enabled()) {
+      this.createArrowDrawSettings(arrow);
+  
+      this.positionArrow(arrow, positionedArrows);
+  
+      this.addArrowToScaleValuesArray(arrow);
+  
+      positionedArrows.push(arrow);
+    }
   }
 
   this.positionFromToPoints();
 
-  return arrowsDrawSettings;
-};
-
-
-/**
- * @returns {Array.<anychart.waterfallModule.Arrow.DrawSettings>}
- */
-anychart.waterfallModule.ArrowsController.prototype.getDrawInfo = function() {
-  this.getStacksBounds(true);
-  var drawSettings = this.createDrawSettings();
-  return drawSettings;
+  return positionedArrows;
 };
 
 
@@ -762,16 +697,30 @@ anychart.waterfallModule.ArrowsController.prototype.applyLabelsStyle = function(
 
 
 /**
+ * Initializes layers for arrows.
+ *
+ * @private
+ */
+anychart.waterfallModule.ArrowsController.prototype.initLayers_ = function() {
+  var labelsLayer = /** @type {!acgraph.vector.UnmanagedLayer} */(this.getLabelsLayer());
+  var arrowsLayer = /** @type {!acgraph.vector.Layer} */(this.getArrowsLayer());
+  var rootLayer = /** @type {!acgraph.vector.Layer} */(this.getRootLayer());
+
+  this.container().addChild(rootLayer);
+
+  rootLayer
+    .addChild(arrowsLayer)
+    .addChild(labelsLayer);
+
+  rootLayer.clip(this.chart_.getPlotBounds());
+};
+
+
+/**
  * Prepare and draw arrows.
  */
 anychart.waterfallModule.ArrowsController.prototype.draw = function() {
-  var chart = this.chart_;
-
-  var labelsLayer = this.getLabelsLayer();
-  var arrowsLayer = this.getArrowsLayer();
-
-  var rootLayer = this.getRootLayer();
-  rootLayer.clip(chart.getPlotBounds());
+  this.initLayers_();
 
   this.checkArrowsCorrectness();
 
@@ -779,10 +728,11 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
 
   // We need arrows labels bounds, when calculating arrows positions.
   this.dispatchSignal(anychart.Signal.MEASURE_BOUNDS | anychart.Signal.MEASURE_COLLECT);
-
   anychart.measuriator.measure();
 
-  var drawInfo = this.getDrawInfo();
+  this.createDrawSettings();
+
+  var arrowsLayer = this.getArrowsLayer();
 
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
@@ -792,6 +742,7 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
 };
 
 
+//region --- Arrow manipulation API for chart.
 /**
  *
  * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
@@ -858,23 +809,22 @@ anychart.waterfallModule.ArrowsController.prototype.addArrow = function(opt_sett
 
 
 /**
+ * Arrow invalidation handler.
+ */
+anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = function() {
+  this.dispatchSignal(
+    anychart.Signal.NEEDS_REDRAW
+  );
+};
+
+
+/**
  * @return {Array.<anychart.waterfallModule.Arrow>}
  */
 anychart.waterfallModule.ArrowsController.prototype.getAllArrows = function() {
   return goog.array.clone(this.arrows_);
 };
-
-
-/**
- * Arrow invalidation handler.
- */
-anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = function() {
-  this.dispatchSignal(
-    anychart.Signal.NEEDS_REDRAW // |
-    // anychart.Signal.MEASURE_BOUNDS |
-    // anychart.Signal.MEASURE_COLLECT
-  );
-};
+//endregion
 
 
 /**
@@ -882,7 +832,7 @@ anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = 
  */
 anychart.waterfallModule.ArrowsController.prototype.getRootLayer = function() {
   if (!this.rootLayer_) {
-    this.rootLayer_ = this.container().layer();
+    this.rootLayer_ = acgraph.layer();
     this.rootLayer_.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
   }
 
@@ -896,10 +846,8 @@ anychart.waterfallModule.ArrowsController.prototype.getRootLayer = function() {
  */
 anychart.waterfallModule.ArrowsController.prototype.getLabelsLayer = function() {
   if (!this.labelsLayer_) {
-    var rootLayer = this.getRootLayer();
     this.labelsLayerEl_ = /** @type {Element} */(acgraph.getRenderer().createLayerElement());
     this.labelsLayer_ = acgraph.unmanagedLayer(this.labelsLayerEl_);
-    this.labelsLayer_.parent(rootLayer);
     this.labelsLayer_.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_LABELS_ZINDEX);
   }
 
@@ -912,8 +860,7 @@ anychart.waterfallModule.ArrowsController.prototype.getLabelsLayer = function() 
  */
 anychart.waterfallModule.ArrowsController.prototype.getArrowsLayer = function() {
   if (!this.arrowsLayer_) {
-    var rootLayer = this.getRootLayer();
-    this.arrowsLayer_ = rootLayer.layer();
+    this.arrowsLayer_ = acgraph.layer();
     this.arrowsLayer_.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
   }
 
