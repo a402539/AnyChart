@@ -351,8 +351,9 @@ anychart.waterfallModule.ArrowsController.prototype.getAllStackLabelsBounds = fu
 
 
 /**
+ * Return stack bounds, expanded by all of its labels bounds.
  *
- * @param {number} index
+ * @param {number} index - Stack index.
  * @return {anychart.math.Rect}
  */
 anychart.waterfallModule.ArrowsController.prototype.getStackFullBounds = function(index) {
