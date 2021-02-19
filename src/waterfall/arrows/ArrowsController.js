@@ -266,6 +266,7 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowBounds = function
 
 
 /**
+ * Returns arrow label text bounds.
  *
  * @param {anychart.waterfallModule.Arrow} arrow
  * @param {anychart.math.Rect} arrowBounds
@@ -286,7 +287,6 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowTextBounds = func
     anchor
   );
 
-  // TODO: this.isVertical() check.
   var textActualBounds = new anychart.math.Rect(
     textPosition.left,
     textPosition.top,
@@ -371,7 +371,7 @@ anychart.waterfallModule.ArrowsController.prototype.getStackFullBounds = functio
   var chart = this.chart_;
   var stackBounds = chart.getStackBounds(index);
 
-  // Fix negative height, as it breaks some Rect api.
+  // Fix negative height, as it breaks some Rect api, i.e. intersects().
   if (stackBounds.getHeight() < 0) {
     stackBounds = new anychart.math.Rect(
       stackBounds.getLeft(),
