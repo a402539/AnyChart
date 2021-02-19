@@ -1317,6 +1317,26 @@ anychart.waterfallModule.Chart.prototype.updateTotalsStorage = function() {
 
 //endregion
 //region --- Overrides
+/** @inheritDoc */
+anychart.waterfallModule.Chart.prototype.changeItemsLayout = function() {
+  anychart.waterfallModule.Chart.base(this, 'changeItemsLayout');
+  this.totalsStorage.getSeries().isVertical(this.isVerticalInternal);
+};
+
+
+/** @inheritDoc */
+anychart.waterfallModule.Chart.prototype.xScaleInvalidated = function(scale) {
+  this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS);
+  anychart.waterfallModule.Chart.base(this, 'xScaleInvalidated', scale);
+};
+
+
+/** @inheritDoc */
+anychart.waterfallModule.Chart.prototype.yScaleInvalidated = function(scale) {
+  this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Chart.SUPPORTED_STATES.TOTALS);
+  anychart.waterfallModule.Chart.base(this, 'yScaleInvalidated', scale);
+};
+
 
 /** @inheritDoc */
 anychart.waterfallModule.Chart.prototype.getAutoNamesForXScale = function(field, drawingPlans) {

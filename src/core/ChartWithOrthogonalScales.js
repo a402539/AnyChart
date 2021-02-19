@@ -469,11 +469,11 @@ anychart.core.ChartWithOrthogonalScales.prototype.getUsedYScales = function () {
 /**
  * Check if passed object contains new scales instances which chart do not contain.
  * @param {Object} newScales - Object with scales.
- * @returns {boolean}
+ * @return {boolean}
  */
-anychart.core.ChartWithOrthogonalScales.prototype.hasNewXScales = function (newScales) {
-  return goog.object.some(newScales, function (scale) {
-    var uid = goog.getUid(scale)
+anychart.core.ChartWithOrthogonalScales.prototype.hasNewXScales = function(newScales) {
+  return goog.object.some(newScales, function(scale) {
+    var uid = goog.getUid(scale);
     return !(uid in this.xScales);
   }, this);
 };
@@ -481,11 +481,11 @@ anychart.core.ChartWithOrthogonalScales.prototype.hasNewXScales = function (newS
 /**
  * Check if passed object contains new scales instances which chart do not contain.
  * @param {Object} newScales - Object with scales.
- * @returns {boolean}
+ * @return {boolean}
  */
-anychart.core.ChartWithOrthogonalScales.prototype.hasNewYScales = function (newScales) {
-  return goog.object.some(newScales, function (scale) {
-    var uid = goog.getUid(scale)
+anychart.core.ChartWithOrthogonalScales.prototype.hasNewYScales = function(newScales) {
+  return goog.object.some(newScales, function(scale) {
+    var uid = goog.getUid(scale);
     return !(uid in this.yScales);
   }, this);
 };
@@ -588,8 +588,8 @@ anychart.core.ChartWithOrthogonalScales.prototype.getAutoNamesForXScale = functi
  * @param {Array.<string>} autoNames - Array with names.
  * @param {anychart.scales.Ordinal} xScale - Ordinal scale for names setup.
  */
-anychart.core.ChartWithOrthogonalScales.prototype.setAutoNamesForXScale = function (autoNames, xScale) {
-  var hasItems = goog.array.some(autoNames, function (name) {
+anychart.core.ChartWithOrthogonalScales.prototype.setAutoNamesForXScale = function(autoNames, xScale) {
+  var hasItems = goog.array.some(autoNames, function(name) {
     return goog.isDef(name);
   });
 
@@ -605,7 +605,7 @@ anychart.core.ChartWithOrthogonalScales.prototype.setAutoNamesForXScale = functi
  * @param {anychart.scales.Ordinal} xScale
  * @param {Array.<Object>} drawingPlans
  */
-anychart.core.ChartWithOrthogonalScales.prototype.finishOrdinalXScaleCalculation = function (xScale, drawingPlans) {
+anychart.core.ChartWithOrthogonalScales.prototype.finishOrdinalXScaleCalculation = function(xScale, drawingPlans) {
   var autoNames = this.getAutoNamesForXScale(xScale.getNamesField(), drawingPlans);
   this.setAutoNamesForXScale(autoNames, xScale);
 };
@@ -616,7 +616,7 @@ anychart.core.ChartWithOrthogonalScales.prototype.finishOrdinalXScaleCalculation
  *
  * @return {!Array<anychart.core.Series>}
  */
-anychart.core.ChartWithOrthogonalScales.prototype.getDrawableWithScales = function () {
+anychart.core.ChartWithOrthogonalScales.prototype.getDrawableWithScales = function() {
   return this.seriesList;
 };
 

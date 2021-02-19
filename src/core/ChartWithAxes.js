@@ -146,6 +146,92 @@ anychart.core.ChartWithAxes.prototype.setDefaultScaleForLayoutBasedElements = fu
 };
 
 
+/**
+ * Change series isVertical state.
+ */
+anychart.core.ChartWithAxes.prototype.changeSeriesLayout = function() {
+  for (var i = this.seriesList.length; i--;) {
+    var series = this.seriesList[i];
+    series['isVertical'](this.isVerticalInternal);
+  }
+};
+
+
+/**
+ * Change axes orientation.
+ */
+anychart.core.ChartWithAxes.prototype.changeAxesLayout = function() {
+  var newValue;
+  var axes = goog.array.concat(this.xAxes_, this.yAxes_);
+  for (var i = axes.length; i--;) {
+    var axis = axes[i];
+
+    if (axis) {
+      switch (axis.getOption('orientation')) {
+        case anychart.enums.Orientation.BOTTOM:
+          newValue = anychart.enums.Orientation.LEFT;
+          break;
+        case anychart.enums.Orientation.TOP:
+          newValue = anychart.enums.Orientation.RIGHT;
+          break;
+        case anychart.enums.Orientation.LEFT:
+          newValue = anychart.enums.Orientation.BOTTOM;
+          break;
+        case anychart.enums.Orientation.RIGHT:
+          newValue = anychart.enums.Orientation.TOP;
+          break;
+      }
+      axis.orientation(newValue);
+    }
+  }
+};
+
+
+/**
+ * Change layout of passed items.
+ * @param {Array} items - Array of items that supports layout change.
+ * @private
+ */
+anychart.core.ChartWithAxes.prototype.changeLayout_ = function(items) {
+  goog.array.forEach(items, function(item) {
+    if (item) {
+      var newValue = item.layout() == anychart.enums.Layout.HORIZONTAL ?
+        anychart.enums.Layout.VERTICAL : anychart.enums.Layout.HORIZONTAL;
+      item.layout(newValue);
+    }
+  });
+};
+
+
+/**
+ * Change grids layout
+ */
+anychart.core.ChartWithAxes.prototype.changeGridsLayout = function() {
+  var items = goog.array.concat(this.xGrids_, this.yGrids_, this.xMinorGrids_, this.yMinorGrids_);
+  this.changeLayout_(items);
+};
+
+
+/**
+ * Change markers layout
+ */
+anychart.core.ChartWithAxes.prototype.changeMarkersLayout = function() {
+  var items = goog.array.concat(this.lineAxesMarkers_, this.rangeAxesMarkers_, this.textAxesMarkers_);
+  this.changeLayout_(items);
+};
+
+
+/**
+ * Change items layout depend on isVertical state.
+ */
+anychart.core.ChartWithAxes.prototype.changeItemsLayout = function() {
+   this.changeSeriesLayout();
+   this.changeAxesLayout();
+   this.changeGridsLayout();
+   this.changeMarkersLayout();
+};
+
+
 /** @inheritDoc */
 anychart.core.ChartWithAxes.prototype.isVertical = function(opt_value) {
   if (goog.isDef(opt_value)) {
@@ -153,46 +239,9 @@ anychart.core.ChartWithAxes.prototype.isVertical = function(opt_value) {
     if (this.isVerticalInternal != opt_value) {
       this.isVerticalInternal = opt_value;
 
-      for (var i = this.seriesList.length; i--;) {
-        this.seriesList[i]['isVertical'](this.isVerticalInternal);
-      }
-
-      var newValue;
-      var axes = goog.array.concat(this.xAxes_, this.yAxes_);
-      anychart.core.Base.suspendSignalsDispatching(axes);
-      for (i = axes.length; i--;) {
-        var axis = axes[i];
-        if (axis) {
-          switch (axis.getOption('orientation')) {
-            case anychart.enums.Orientation.BOTTOM:
-              newValue = anychart.enums.Orientation.LEFT;
-              break;
-            case anychart.enums.Orientation.TOP:
-              newValue = anychart.enums.Orientation.RIGHT;
-              break;
-            case anychart.enums.Orientation.LEFT:
-              newValue = anychart.enums.Orientation.BOTTOM;
-              break;
-            case anychart.enums.Orientation.RIGHT:
-              newValue = anychart.enums.Orientation.TOP;
-              break;
-          }
-          axis.orientation(newValue);
-        }
-      }
-
-      var items = goog.array.concat(this.xGrids_, this.yGrids_, this.xMinorGrids_, this.yMinorGrids_, this.lineAxesMarkers_, this.rangeAxesMarkers_, this.textAxesMarkers_);
-      anychart.core.Base.suspendSignalsDispatching(items);
-      for (i = items.length; i--;) {
-        var item = items[i];
-        if (item) {
-          newValue = item.layout() == anychart.enums.Layout.HORIZONTAL ?
-              anychart.enums.Layout.VERTICAL : anychart.enums.Layout.HORIZONTAL;
-          item.layout(newValue);
-        }
-      }
-
-      anychart.core.Base.resumeSignalsDispatchingTrue(axes, items);
+      this.suspendSignalsDispatching();
+      this.changeItemsLayout();
+      this.resumeSignalsDispatching(true);
     }
     return this;
   }
