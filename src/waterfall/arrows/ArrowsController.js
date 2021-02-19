@@ -82,6 +82,8 @@ anychart.waterfallModule.ArrowsController.prototype.normalUpDirection = function
 
 /**
  * Checks if right direction is not inverted.
+ *
+ * @return {boolean}
  */
 anychart.waterfallModule.ArrowsController.prototype.normalRightDirection = function() {
   return this.isVertical() === this.chart_.xScale().inverted();
@@ -296,31 +298,42 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowTextBounds = func
 
 
 /**
+ * Fixes labels bounds in vertical mode.
  *
- * @param {number} index
+ * @param {anychart.math.Rect} bounds - Labels bounds.
+ * @return {anychart.math.Rect}
+ */
+anychart.waterfallModule.ArrowsController.prototype.fixLabelsBounds = function(bounds) {
+  if (this.isVertical()) {
+    // In vertical mode bounds need to be rotated.
+    return new anychart.math.Rect(
+      bounds.getTop(),
+      bounds.getLeft(),
+      bounds.getHeight(),
+      bounds.getWidth()
+    );
+  } else {
+    return bounds;
+  }
+};
+
+
+/**
+ * Return series and stack labels bounds.
+ *
+ * @param {number} index - X scale point index.
  * @return {Array.<anychart.math.Rect>}
  */
-anychart.waterfallModule.ArrowsController.prototype.getAllSeriesLabelsBounds = function(index) {
+anychart.waterfallModule.ArrowsController.prototype.getAllStackLabelsBounds = function(index) {
   var bounds = [];
   var chart = this.chart_;
   var seriesCount = chart.getSeriesCount();
+
   for (var i = 0; i < seriesCount; i++) {
     var labelsFactory = chart.getSeries(i).labels();
     var label = labelsFactory.getLabel(index);
-    // TODO: label.enabled() === false will fail here.
-    if (label && (label.enabled() || labelsFactory.enabled())) {
-      var labelBounds = label.bounds_;
-      if (labelBounds.getHeight() < 0 || labelBounds.getWidth() < 0) {
-        console.log(labelBounds);
-      }
-      if (this.isVertical()) {
-        labelBounds = new anychart.math.Rect(
-          labelBounds.getTop(),
-          labelBounds.getLeft(),
-          labelBounds.getHeight(),
-          labelBounds.getWidth()
-        );
-      }
+    if (label) {
+      var labelBounds = this.fixLabelsBounds(label.bounds_);
       bounds.push(labelBounds);
     }
   }
@@ -328,18 +341,7 @@ anychart.waterfallModule.ArrowsController.prototype.getAllSeriesLabelsBounds = f
   if (chart.stackLabels().enabled()) {
     var label = chart.stackLabels().getLabel(index);
     if (label) {
-      var labelBounds = label.bounds_;
-      if (labelBounds.getHeight() < 0 || labelBounds.getWidth() < 0) {
-        console.log(labelBounds);
-      }
-      if (this.isVertical()) {
-        labelBounds = new anychart.math.Rect(
-          labelBounds.getTop(),
-          labelBounds.getLeft(),
-          labelBounds.getHeight(),
-          labelBounds.getWidth()
-        );
-      }
+      var labelBounds = this.fixLabelsBounds(label.bounds_);
       bounds.push(labelBounds);
     }
   }
@@ -366,7 +368,7 @@ anychart.waterfallModule.ArrowsController.prototype.getStackFullBounds = functio
       -stackBounds.getHeight()
     );
   }
-  var seriesLabelsBounds = this.getAllSeriesLabelsBounds(index);
+  var seriesLabelsBounds = this.getAllStackLabelsBounds(index);
 
   for (var i = 0; i < seriesLabelsBounds.length; i++) {
     var labelBounds = seriesLabelsBounds[i];
@@ -378,18 +380,25 @@ anychart.waterfallModule.ArrowsController.prototype.getStackFullBounds = functio
 
 
 /**
+ * Updates stacks bounds to use them for arrow positioning.
+ */
+anychart.waterfallModule.ArrowsController.prototype.updateStacksBounds = function() {
+  this.stacksBounds_ = [];
+  for (var i = 0; i < this.chart_.getStacksCount(); i++) {
+    this.stacksBounds_.push(this.getStackFullBounds(i));
+  }
+};
+
+
+/**
  * Returns not simple stack bounds, but bounds enlarged to
  * include series labels.
  *
- * @param {boolean=} opt_forceUpdate - Force recalculate stacks bounds.
  * @return {Array.<anychart.math.Rect>}
  */
-anychart.waterfallModule.ArrowsController.prototype.getStacksBounds = function(opt_forceUpdate) {
-  if (!goog.isDef(this.stacksBounds_) || opt_forceUpdate) {
-    this.stacksBounds_ = [];
-    for (var i = 0; i < this.chart_.getStacksCount(); i++) {
-      this.stacksBounds_.push(this.getStackFullBounds(i));
-    }
+anychart.waterfallModule.ArrowsController.prototype.getStacksBounds = function() {
+  if (!goog.isDef(this.stacksBounds_)) {
+    this.updateStacksBounds();
   }
   return this.stacksBounds_;
 };
@@ -584,16 +593,42 @@ anychart.waterfallModule.ArrowsController.prototype.sortArrowsForPointsPositioni
 
 
 /**
- * If arrow is drawn to 
+ * If arrow is going right out of stack with given index.
+ *
  * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
- * @param {number} xScaleIndex - Index of the xScale item, against which we check rightness.
+ * @param {number} stackIndex - Index of the xScale item, against which we check rightness.
  * @return {boolean}
  */
-anychart.waterfallModule.ArrowsController.prototype.isArrowRightOfStack = function(arrow, xScaleIndex) {
-  var fromIndex = this.getIndexFromValue(arrow.getOption('from'));
-  var toIndex = this.getIndexFromValue(arrow.getOption('to'));
+anychart.waterfallModule.ArrowsController.prototype.isArrowGoingRightFromStack = function(arrow, stackIndex) {
+  var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
+  var toIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('to')));
 
-  return Math.min(fromIndex, toIndex, xScaleIndex) === xScaleIndex;
+  return Math.min(fromIndex, toIndex, stackIndex) === stackIndex;
+};
+
+
+/**
+ * Returns sort function used for from/to points positioning.
+ *
+ * @param {number} xScaleIndex - Index of the stack on X scale.
+ * @return {function(anychart.waterfallModule.Arrow, anychart.waterfallModule.Arrow): number}
+ */
+anychart.waterfallModule.ArrowsController.prototype.getArrowsSortFunction = function(xScaleIndex) {
+  var sortFn = function arrowsSortFunction(prev, next) {
+    var isPrevRight = this.isArrowGoingRightFromStack(prev, xScaleIndex);
+    var isNextRight = this.isArrowGoingRightFromStack(next, xScaleIndex);
+    var isArrowUp = this.isArrowUp(prev);
+
+    if (isPrevRight !== isNextRight) {
+      return isPrevRight === this.normalRightDirection() ? 1 : -1;
+    } else {
+      return isArrowUp === this.normalUpDirection() ?
+        prev.drawSettings().horizontalY - next.drawSettings().horizontalY :
+        next.drawSettings().horizontalY - prev.drawSettings().horizontalY;
+    }
+  };
+
+  return goog.bind(sortFn, this);
 };
 
 
@@ -607,23 +642,8 @@ anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = fu
   var width = stackBounds.getWidth();
   var step = width / (arrows.length + 1);
 
-  // goog.array.sort does not allow binding context to function somehow.
-  var bindedSortFunction = goog.bind(this.sortArrowsForPointsPositioning, this);
-
   // goog.array.sort(arrows, bindedSortFunction);
-  goog.array.sort(arrows, (prev, next) => {
-    var isPrevRight = this.isArrowRightOfStack(prev, xScaleIndex);
-    var isNextRight = this.isArrowRightOfStack(next, xScaleIndex);
-    var isArrowUp = this.isArrowUp(prev);
-
-    if (isPrevRight !== isNextRight) {
-      return isPrevRight === this.normalRightDirection() ? 1 : -1;
-    } else {
-      return isArrowUp === this.normalUpDirection() ?
-        prev.drawSettings().horizontalY - next.drawSettings().horizontalY :
-        next.drawSettings().horizontalY - prev.drawSettings().horizontalY;
-    }
-  });
+  goog.array.sort(arrows, this.getArrowsSortFunction(xScaleIndex));
 
   var singleInOut = this.singleInOut_;
   var inPosition = stackBounds.getLeft() + (stackBounds.getWidth() / 3);
@@ -675,7 +695,8 @@ anychart.waterfallModule.ArrowsController.prototype.positionFromToPoints = funct
  * @return {Array.<anychart.waterfallModule.Arrow.DrawSettings>}
  */
 anychart.waterfallModule.ArrowsController.prototype.createDrawSettings = function() {
-  this.getStacksBounds(true);
+  this.updateStacksBounds();
+
   this.xScaleValueToArrows_.length = 0;
   var positionedArrows = [];
   for (var i = 0; i < this.arrows_.length; i++) {
