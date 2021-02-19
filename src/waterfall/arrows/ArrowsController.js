@@ -319,6 +319,17 @@ anychart.waterfallModule.ArrowsController.prototype.fixLabelsBounds = function(b
 
 
 /**
+ * Returns labels factory label bounds.
+ *
+ * @param {anychart.core.ui.LabelsFactory.Label} label - Labels factory label to be measured.
+ * @return {anychart.math.Rect}
+ */
+anychart.waterfallModule.ArrowsController.prototype.getLabelBounds = function(label) {
+  return label.getTextElement().getBounds();
+};
+
+
+/**
  * Return series and stack labels bounds.
  *
  * @param {number} index - X scale point index.
@@ -333,7 +344,7 @@ anychart.waterfallModule.ArrowsController.prototype.getAllStackLabelsBounds = fu
     var labelsFactory = chart.getSeries(i).labels();
     var label = labelsFactory.getLabel(index);
     if (label) {
-      var labelBounds = this.fixLabelsBounds(label.bounds_);
+      var labelBounds = this.fixLabelsBounds(this.getLabelBounds(label));
       bounds.push(labelBounds);
     }
   }
@@ -341,7 +352,7 @@ anychart.waterfallModule.ArrowsController.prototype.getAllStackLabelsBounds = fu
   if (chart.stackLabels().enabled()) {
     var label = chart.stackLabels().getLabel(index);
     if (label) {
-      var labelBounds = this.fixLabelsBounds(label.bounds_);
+      var labelBounds = this.fixLabelsBounds(this.getLabelBounds(label));
       bounds.push(labelBounds);
     }
   }
