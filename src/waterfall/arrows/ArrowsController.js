@@ -499,19 +499,16 @@ anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = fun
 };
 
 
+
 /**
- * Checks arrow for intersection with stacks and other arrows.
- * Updates arrow draw settings.
+ * Returns how far arrow must be moved up/down to avoid intersection with
+ * given bounds.
  *
- * @param {anychart.waterfallModule.Arrow} arrow - Arrow to position.
- * @param {Array.<anychart.waterfallModule.Arrow>} positionedArrows - Already positioned arrows.
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow instance.
+ * @param {Array.<anychart.math.Rect>} fixedBounds - Bounds to check intersection against.
+ * @return {number}
  */
-anychart.waterfallModule.ArrowsController.prototype.positionArrow = function(arrow, positionedArrows) {
-  /*
-    Clone array, because we are going to sort it and it might break other
-    parts, which relay on strict order of bounds.
-   */
-  var stackBounds = goog.array.clone(this.getStacksBounds());
+anychart.waterfallModule.ArrowsController.prototype.getArrowDelta = function(arrow, fixedBounds) {
   var isUp = this.isArrowUp(arrow);
   var isNormalUpDirection = this.normalUpDirection();
 
@@ -527,55 +524,52 @@ anychart.waterfallModule.ArrowsController.prototype.positionArrow = function(arr
   var arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
 
   /*
-    Ensure we always go from the lowest lying to highest lying stack bounds.
+    Ensure we always go from the lowest lying to highest lyi  ng stack bounds.
    */
-  stackBounds.sort(function(prev, next) {
+  fixedBounds.sort(function(prev, next) {
     return isUp === isNormalUpDirection ?
       next.getBottom() - prev.getBottom() :
       prev.getTop() - next.getTop();
   });
 
-  for (var i = 0; i < stackBounds.length; i++) {
-    var sb = stackBounds[i];
+  var overallDelta = 0;
+
+  for (var i = 0; i < fixedBounds.length; i++) {
+    var sb = fixedBounds[i];
 
     var delta = this.getIntersectionDelta(sb, arrowBounds, isUp);
     if (delta !== 0) {
       newDrawSettings.horizontalY += delta;
+      overallDelta += delta;
 
       arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
     }
   }
 
-  /*
-    Our current arrow bounds must be compared to other (fixed) bounds
-    in following order:
-      1) if arrow is looking up, then in descending order (remember Y values are lowest at the top)
-      2) if arrow is looking down, then in ascending order
-    Doing it like this ensures bounds are poped up/pushed down as far as it is needed.
-   */
-  positionedArrows.sort(function(prev, next) {
-    var prevDrawSettings = prev.drawSettings();
-    var nextDrawSettings = next.drawSettings();
-    return isUp ?
-      nextDrawSettings.horizontalY - prevDrawSettings.horizontalY :
-      prevDrawSettings.horizontalY - nextDrawSettings.horizontalY;
-  });
+  return overallDelta;
+};
 
-  for (var i = 0; i < positionedArrows.length; i++) {
-    var positionedArrowDrawSettings = positionedArrows[i].drawSettings();
 
-    var fixedBounds = this.createArrowBounds(positionedArrowDrawSettings, arrow);
+/**
+ * Checks arrow for intersection with stacks and other arrows.
+ * Updates arrow draw settings.
+ *
+ * @param {anychart.waterfallModule.Arrow} arrow - Arrow to position.
+ * @param {Array.<anychart.waterfallModule.Arrow>} positionedArrows - Already positioned arrows.
+ */
+anychart.waterfallModule.ArrowsController.prototype.positionArrow = function(arrow, positionedArrows) {
+  // First we need to collect all fixed bounds, against which we will be checking intersection.
+  var stackBounds = goog.array.clone(this.getStacksBounds());
+  var arrowsBounds = goog.array.map(positionedArrows, function(a) {
+    return this.createArrowBounds(a.drawSettings(), a);
+  }, this);
+  var allFixedBounds = goog.array.concat(arrowsBounds, stackBounds);
 
-    var delta = this.getIntersectionDelta(fixedBounds, arrowBounds, isUp);
-
-    if (delta !== 0) {
-      newDrawSettings.horizontalY += delta;
-
-      arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
-    }
-  }
-
-  arrow.drawSettings(newDrawSettings);
+  // How much arrow should be shifted, to avoid intersection.
+  var delta = this.getArrowDelta(arrow, allFixedBounds);
+  var drawSettings = arrow.drawSettings();
+  drawSettings.horizontalY += delta;
+  arrow.drawSettings(drawSettings);
 };
 
 
