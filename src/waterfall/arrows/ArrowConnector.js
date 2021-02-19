@@ -4,6 +4,7 @@ goog.require('anychart.core.Base');
 goog.require('anychart.core.settings.IObjectWithSettings');
 
 
+
 /**
  * Waterfall arrow connector settings.
  *
@@ -15,10 +16,10 @@ anychart.waterfallModule.ArrowConnector = function() {
   anychart.waterfallModule.ArrowConnector.base(this, 'constructor');
 
   anychart.core.settings.createDescriptorsMeta(
-    this.descriptorsMeta,
-    [
-      ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
-    ]
+      this.descriptorsMeta,
+      [
+        ['stroke', 0, anychart.Signal.NEEDS_REDRAW_APPEARANCE]
+      ]
   );
 };
 goog.inherits(anychart.waterfallModule.ArrowConnector, anychart.core.Base);

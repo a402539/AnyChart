@@ -845,12 +845,12 @@ anychart.waterfallModule.Chart.prototype.drawLabels = function() {
  */
 anychart.waterfallModule.Chart.prototype.stackLabelsInvalidated = function() {
   this.invalidateMultiState(
-    anychart.enums.Store.WATERFALL,
-    [
-      anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
-      anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
-    ],
-    anychart.Signal.NEEDS_REDRAW
+      anychart.enums.Store.WATERFALL,
+      [
+        anychart.waterfallModule.Chart.SUPPORTED_STATES.STACK_LABELS,
+        anychart.waterfallModule.Chart.SUPPORTED_STATES.ARROWS
+      ],
+      anychart.Signal.NEEDS_REDRAW
   );
 };
 

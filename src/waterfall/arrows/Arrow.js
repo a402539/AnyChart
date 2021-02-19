@@ -45,7 +45,7 @@ goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
   *   isUp: boolean
   *}}
   */
- anychart.waterfallModule.Arrow.DrawSettings;
+anychart.waterfallModule.Arrow.DrawSettings;
 
 
 /**
@@ -85,6 +85,7 @@ anychart.waterfallModule.Arrow.prototype.SUPPORTED_SIGNALS =
     anychart.Signal.NEEDS_REDRAW_APPEARANCE |
     anychart.Signal.NEEDS_REDRAW |
     anychart.Signal.NEEDS_REDRAW_LABELS;
+
 
 /**
  * Returns arrow connector path.
@@ -127,14 +128,14 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function() {
   var thickness = anychart.utils.extractThickness(stroke);
 
   var shiftedFromPoint = new anychart.math.Point2D(
-    anychart.utils.applyPixelShift(drawSettings.fromPoint.x, thickness),
-    anychart.utils.applyPixelShift(drawSettings.fromPoint.y, thickness)
-  );
+      anychart.utils.applyPixelShift(drawSettings.fromPoint.x, thickness),
+      anychart.utils.applyPixelShift(drawSettings.fromPoint.y, thickness)
+      );
 
   var shiftedToPoint = new anychart.math.Point2D(
-    anychart.utils.applyPixelShift(drawSettings.toPoint.x, thickness),
-    anychart.utils.applyPixelShift(drawSettings.toPoint.y, thickness)
-  );
+      anychart.utils.applyPixelShift(drawSettings.toPoint.x, thickness),
+      anychart.utils.applyPixelShift(drawSettings.toPoint.y, thickness)
+      );
 
   var shiftedHorizontalY = anychart.utils.applyPixelShift(drawSettings.horizontalY, thickness);
 
@@ -143,47 +144,32 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function() {
   var isVertical = this.controller_.isVertical();
 
   anychart.core.drawers.move(
-    path,
-    isVertical,
-    shiftedFromPoint.x,
-    shiftedFromPoint.y
-  );
-  anychart.core.drawers.line(
-    path,
-    isVertical,
-    shiftedFromPoint.x,
-    shiftedHorizontalY
-  );
-  anychart.core.drawers.line(
-    path,
-    isVertical,
-    shiftedToPoint.x,
-    shiftedHorizontalY
-  );
-  anychart.core.drawers.line(
-    path,
-    isVertical,
-    shiftedToPoint.x,
-    shiftedToPoint.y
+      path,
+      isVertical,
+      shiftedFromPoint.x,
+      shiftedFromPoint.y
   );
 
+  anychart.core.drawers.line(
+      path,
+      isVertical,
+      shiftedFromPoint.x,
+      shiftedHorizontalY
+  );
 
-  // path.moveTo(
-  //   shiftedFromPoint.x,
-  //   shiftedFromPoint.y
-  // );
-  // path.lineTo(
-  //   shiftedFromPoint.x,
-  //   shiftedHorizontalY
-  // );
-  // path.lineTo(
-  //   shiftedToPoint.x,
-  //   shiftedHorizontalY
-  // );
-  // path.lineTo(
-  //   shiftedToPoint.x,
-  //   shiftedToPoint.y
-  // );
+  anychart.core.drawers.line(
+      path,
+      isVertical,
+      shiftedToPoint.x,
+      shiftedHorizontalY
+  );
+
+  anychart.core.drawers.line(
+      path,
+      isVertical,
+      shiftedToPoint.x,
+      shiftedToPoint.y
+  );
 };
 
 
@@ -197,9 +183,9 @@ anychart.waterfallModule.Arrow.prototype.drawHead = function() {
   var drawSettings = this.drawSettings();
 
   var shiftedToPoint = new anychart.math.Point2D(
-    anychart.utils.applyPixelShift(drawSettings.toPoint.x, thickness),
-    anychart.utils.applyPixelShift(drawSettings.toPoint.y, thickness)
-  );
+      anychart.utils.applyPixelShift(drawSettings.toPoint.x, thickness),
+      anychart.utils.applyPixelShift(drawSettings.toPoint.y, thickness)
+      );
 
   // Arrow head.
   var arrowHeadPath = this.getArrowHeadPath();
@@ -210,46 +196,30 @@ anychart.waterfallModule.Arrow.prototype.drawHead = function() {
   var isVertical = this.controller_.isVertical();
 
   anychart.core.drawers.move(
-    arrowHeadPath,
-    isVertical,
-    shiftedToPoint.x,
-    shiftedToPoint.y
+      arrowHeadPath,
+      isVertical,
+      shiftedToPoint.x,
+      shiftedToPoint.y
   );
   anychart.core.drawers.line(
-    arrowHeadPath,
-    isVertical,
-    shiftedToPoint.x - (arrowHeadSize / 2),
-    shiftedToPoint.y + arrowHeadYDelta
+      arrowHeadPath,
+      isVertical,
+      shiftedToPoint.x - (arrowHeadSize / 2),
+      shiftedToPoint.y + arrowHeadYDelta
   );
   anychart.core.drawers.line(
-    arrowHeadPath,
-    isVertical,
-    shiftedToPoint.x + (arrowHeadSize / 2),
-    shiftedToPoint.y + arrowHeadYDelta
+      arrowHeadPath,
+      isVertical,
+      shiftedToPoint.x + (arrowHeadSize / 2),
+      shiftedToPoint.y + arrowHeadYDelta
   );
   anychart.core.drawers.line(
-    arrowHeadPath,
-    isVertical,
-    shiftedToPoint.x,
-    shiftedToPoint.y
+      arrowHeadPath,
+      isVertical,
+      shiftedToPoint.x,
+      shiftedToPoint.y
   );
 
-  // arrowHeadPath.moveTo(
-  //   shiftedToPoint.x,
-  //   shiftedToPoint.y
-  // );
-  // arrowHeadPath.lineTo(
-  //   shiftedToPoint.x - (arrowHeadSize / 2),
-  //   shiftedToPoint.y + arrowHeadYDelta
-  // );
-  // arrowHeadPath.lineTo(
-  //   shiftedToPoint.x + (arrowHeadSize / 2),
-  //   shiftedToPoint.y + arrowHeadYDelta
-  // );
-  // arrowHeadPath.lineTo(
-  //   shiftedToPoint.x,
-  //   shiftedToPoint.y
-  // );
   arrowHeadPath.fill(stroke);
   arrowHeadPath.stroke('none');
 };
@@ -265,17 +235,17 @@ anychart.waterfallModule.Arrow.prototype.getLabelParentBounds = function() {
 
   if (this.controller_.isVertical()) {
     return new anychart.math.Rect(
-      drawSettings.horizontalY,
-      drawSettings.fromPoint.x,
-      0,
-      drawSettings.toPoint.x - drawSettings.fromPoint.x
+        drawSettings.horizontalY,
+        drawSettings.fromPoint.x,
+        0,
+        drawSettings.toPoint.x - drawSettings.fromPoint.x
     );
   } else {
     return new anychart.math.Rect(
-      drawSettings.fromPoint.x,
-      drawSettings.horizontalY,
-      drawSettings.toPoint.x - drawSettings.fromPoint.x,
-      0
+        drawSettings.fromPoint.x,
+        drawSettings.horizontalY,
+        drawSettings.toPoint.x - drawSettings.fromPoint.x,
+        0
     );
   }
 };
@@ -423,10 +393,10 @@ anychart.waterfallModule.Arrow.prototype.disposeInternal = function() {
   this.controller_ = null;
 
   goog.disposeAll(
-    this.arrowPath_,
-    this.arrowHeadPath_,
-    this.text_,
-    this.connector_
+      this.arrowPath_,
+      this.arrowHeadPath_,
+      this.text_,
+      this.connector_
   );
   anychart.waterfallModule.Arrow.base(this, 'disposeInternal');
 };

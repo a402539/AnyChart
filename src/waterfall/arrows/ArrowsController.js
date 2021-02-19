@@ -7,6 +7,7 @@ goog.require('anychart.reflow.IMeasurementsTargetProvider');
 goog.require('anychart.waterfallModule.Arrow');
 
 
+
 /**
  *
  * @constructor
@@ -29,6 +30,8 @@ anychart.waterfallModule.ArrowsController = function(chart) {
    * This array is used to position from/to points so, that they do not overlap.
    *
    * @type {Array.<Array.<anychart.waterfallModule.Arrow>>}
+   * @private
+   * TODO: xScaleIndexToArrows_ rename
    */
   this.xScaleValueToArrows_ = [];
 
@@ -38,15 +41,32 @@ anychart.waterfallModule.ArrowsController = function(chart) {
 };
 goog.inherits(anychart.waterfallModule.ArrowsController, anychart.core.VisualBase);
 
+
+/**
+ * Arrows controller supported signals.
+ *
+ * @type {number}
+ */
 anychart.waterfallModule.ArrowsController.prototype.SUPPORTED_SIGNALS =
-  anychart.core.Base.prototype.SUPPORTED_SIGNALS |
-  anychart.Signal.NEEDS_REDRAW |
-  anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
-  anychart.Signal.MEASURE_BOUNDS; //Signal for Measuriator to measure the bounds of collected labels.
+    anychart.core.Base.prototype.SUPPORTED_SIGNALS |
+    anychart.Signal.NEEDS_REDRAW |
+    anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
+    anychart.Signal.MEASURE_BOUNDS; //Signal for Measuriator to measure the bounds of collected labels.
 
 
+/**
+ * Arrows element z-index value.
+ *
+ * @type {number}
+ */
 anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX = 41;
 
+
+/**
+ * Arrows labels z-index value.
+ *
+ * @type {number}
+ */
 anychart.waterfallModule.ArrowsController.ARROWS_LABELS_ZINDEX = 42;
 
 
@@ -191,21 +211,21 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowDrawSettings = fu
     var minimalGap = 15;
     var isUp = this.chart_.getStackSum(fromIndex, 'diff') >= 0;
     var normalUpDirection = this.normalUpDirection();
-  
+
     var fromPoint = new anychart.math.Point2D(
-      fromStackBounds.getLeft() + fromStackBounds.getWidth() / 2,
-      isUp === normalUpDirection ? fromStackBounds.getTop() : fromStackBounds.getBottom()
-    );
-  
+        fromStackBounds.getLeft() + fromStackBounds.getWidth() / 2,
+        isUp === normalUpDirection ? fromStackBounds.getTop() : fromStackBounds.getBottom()
+        );
+
     var toPoint = new anychart.math.Point2D(
-      toStackBounds.getLeft() + toStackBounds.getWidth() / 2,
-      isUp === normalUpDirection ? toStackBounds.getTop() : toStackBounds.getBottom()
-    );
-  
+        toStackBounds.getLeft() + toStackBounds.getWidth() / 2,
+        isUp === normalUpDirection ? toStackBounds.getTop() : toStackBounds.getBottom()
+        );
+
     var baseHorizontalY = isUp && this.normalUpDirection() ?
-      (Math.min(fromPoint.y, toPoint.y) - minimalGap) :
-      (Math.max(fromPoint.y, toPoint.y) + minimalGap);
-  
+        (Math.min(fromPoint.y, toPoint.y) - minimalGap) :
+        (Math.max(fromPoint.y, toPoint.y) + minimalGap);
+
     drawSettings = {
       fromPoint: fromPoint,
       toPoint: toPoint,
@@ -246,16 +266,17 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowBounds = function
   var isRightDirection = arrowDrawSettings.toPoint.x > arrowDrawSettings.fromPoint.x;
 
   var startX = isRightDirection ? arrowDrawSettings.fromPoint.x : arrowDrawSettings.toPoint.x;
+
   var width = isRightDirection ?
-    arrowDrawSettings.toPoint.x - arrowDrawSettings.fromPoint.x :
-    arrowDrawSettings.fromPoint.x - arrowDrawSettings.toPoint.x;
+      arrowDrawSettings.toPoint.x - arrowDrawSettings.fromPoint.x :
+      arrowDrawSettings.fromPoint.x - arrowDrawSettings.toPoint.x;
 
   var arrowBounds = new anychart.math.Rect(
       startX,
       arrowDrawSettings.horizontalY - halfSize,
       width,
       halfSize * 2
-    );
+      );
 
   var textActualBounds = this.createArrowTextBounds(arrow, arrowBounds);
 
@@ -281,19 +302,18 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowTextBounds = func
   var anchor = /** @type {anychart.enums.Anchor} */(label.getOption('anchor'));
 
   var textPosition = text.getTextPosition(
-    arrowBounds.clone(),
-    textBounds.height,
-    position,
-    anchor
-  );
+      arrowBounds.clone(),
+      textBounds.height,
+      position,
+      anchor
+      );
 
-  var textActualBounds = new anychart.math.Rect(
-    textPosition.left,
-    textPosition.top,
-    textBounds.width,
-    textBounds.height
+  return new anychart.math.Rect(
+      textPosition.left,
+      textPosition.top,
+      textBounds.width,
+      textBounds.height
   );
-  return textActualBounds;
 };
 
 
@@ -307,10 +327,10 @@ anychart.waterfallModule.ArrowsController.prototype.fixLabelsBounds = function(b
   if (this.isVertical()) {
     // In vertical mode bounds need to be rotated.
     return new anychart.math.Rect(
-      bounds.getTop(),
-      bounds.getLeft(),
-      bounds.getHeight(),
-      bounds.getWidth()
+        bounds.getTop(),
+        bounds.getLeft(),
+        bounds.getHeight(),
+        bounds.getWidth()
     );
   } else {
     return bounds;
@@ -374,11 +394,11 @@ anychart.waterfallModule.ArrowsController.prototype.getStackFullBounds = functio
   // Fix negative height, as it breaks some Rect api, i.e. intersects().
   if (stackBounds.getHeight() < 0) {
     stackBounds = new anychart.math.Rect(
-      stackBounds.getLeft(),
-      stackBounds.getTop() + stackBounds.getHeight(),
-      stackBounds.getWidth(),
-      -stackBounds.getHeight()
-    );
+        stackBounds.getLeft(),
+        stackBounds.getTop() + stackBounds.getHeight(),
+        stackBounds.getWidth(),
+        -stackBounds.getHeight()
+        );
   }
   var seriesLabelsBounds = this.getAllStackLabelsBounds(index);
 
@@ -468,7 +488,7 @@ anychart.waterfallModule.ArrowsController.prototype.arrowCorrectFromTo = functio
 anychart.waterfallModule.ArrowsController.prototype.isArrowUnique = function(array, arrow) {
   var duplicate = goog.array.find(array, function(item) {
     return arrow.getOption('from') === item.getOption('from') &&
-      arrow.getOption('to') === item.getOption('to');
+        arrow.getOption('to') === item.getOption('to');
   });
 
   return goog.isNull(duplicate);
@@ -499,7 +519,6 @@ anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = fun
 };
 
 
-
 /**
  * Returns how far arrow must be moved up/down to avoid intersection with
  * given bounds.
@@ -528,8 +547,8 @@ anychart.waterfallModule.ArrowsController.prototype.getArrowDelta = function(arr
    */
   fixedBounds.sort(function(prev, next) {
     return isUp === isNormalUpDirection ?
-      next.getBottom() - prev.getBottom() :
-      prev.getTop() - next.getTop();
+        next.getBottom() - prev.getBottom() :
+        prev.getTop() - next.getTop();
   });
 
   var overallDelta = 0;
@@ -592,8 +611,8 @@ anychart.waterfallModule.ArrowsController.prototype.sortArrowsForPointsPositioni
     return prevIsRight ? 1 : -1;
   } else {
     return isArrowUp ?
-      prev.drawSettings().horizontalY - next.drawSettings().horizontalY :
-      next.drawSettings().horizontalY - prev.drawSettings().horizontalY;
+        prev.drawSettings().horizontalY - next.drawSettings().horizontalY :
+        next.drawSettings().horizontalY - prev.drawSettings().horizontalY;
   }
 };
 
@@ -629,8 +648,8 @@ anychart.waterfallModule.ArrowsController.prototype.getArrowsSortFunction = func
       return isPrevRight === this.normalRightDirection() ? 1 : -1;
     } else {
       return isArrowUp === this.normalUpDirection() ?
-        prev.drawSettings().horizontalY - next.drawSettings().horizontalY :
-        next.drawSettings().horizontalY - prev.drawSettings().horizontalY;
+          prev.drawSettings().horizontalY - next.drawSettings().horizontalY :
+          next.drawSettings().horizontalY - prev.drawSettings().horizontalY;
     }
   };
 
@@ -710,11 +729,11 @@ anychart.waterfallModule.ArrowsController.prototype.createDrawSettings = functio
 
     if (arrow.enabled()) {
       this.createArrowDrawSettings(arrow);
-  
+
       this.positionArrow(arrow, positionedArrows);
-  
+
       this.addArrowToScaleValuesArray(arrow);
-  
+
       positionedArrows.push(arrow);
     }
   }
@@ -766,8 +785,8 @@ anychart.waterfallModule.ArrowsController.prototype.initLayers_ = function() {
   this.container().addChild(rootLayer);
 
   rootLayer
-    .addChild(arrowsLayer)
-    .addChild(labelsLayer);
+      .addChild(arrowsLayer)
+      .addChild(labelsLayer);
 
   rootLayer.clip(this.chart_.getPlotBounds());
 };
@@ -867,11 +886,11 @@ anychart.waterfallModule.ArrowsController.prototype.addArrow = function(opt_sett
 
 /**
  * Arrow invalidation handler.
+ *
+ * @private
  */
 anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = function() {
-  this.dispatchSignal(
-    anychart.Signal.NEEDS_REDRAW
-  );
+  this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
 };
 
 
@@ -928,9 +947,9 @@ anychart.waterfallModule.ArrowsController.prototype.getArrowsLayer = function() 
 /** @inheritDoc */
 anychart.waterfallModule.ArrowsController.prototype.disposeInternal = function() {
   goog.disposeAll(
-    this.arrows_,
-    this.arrowsLayer_,
-    this.labelsLayer_
+      this.arrows_,
+      this.arrowsLayer_,
+      this.labelsLayer_
   );
   anychart.waterfallModule.ArrowsController.base(this, 'disposeInternal');
 };
