@@ -280,7 +280,7 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowTextBounds = func
   var anchor = /** @type {anychart.enums.Anchor} */(label.getOption('anchor'));
 
   var textPosition = text.getTextPosition(
-    arrowBounds,
+    arrowBounds.clone(),
     textBounds.height,
     position,
     anchor

@@ -645,7 +645,7 @@ anychart.waterfallModule.Chart.prototype.getFormatProviderForArrow = function(to
       type: anychart.enums.TokenType.NUMBER
     },
     'percent': {
-      value: from == 0 ? '-' : diff / from,
+      value: from == 0 ? '-' : diff / Math.abs(from),
       type: from == 0 ? anychart.enums.TokenType.STRING : anychart.enums.TokenType.PERCENT
     }
   };
