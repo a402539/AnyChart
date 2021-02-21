@@ -42,6 +42,14 @@ anychart.waterfallModule.ArrowConnector.OWN_DESCRIPTORS = (function() {
 anychart.core.settings.populate(anychart.waterfallModule.ArrowConnector, anychart.waterfallModule.ArrowConnector.OWN_DESCRIPTORS);
 
 
+/**
+ * Signals supported by arrow connector.
+ *
+ * @type {number}
+ */
+anychart.waterfallModule.ArrowConnector.prototype.SUPPORTED_SIGNALS = anychart.Signal.NEEDS_REDRAW_APPEARANCE;
+
+
 /** @inheritDoc */
 anychart.waterfallModule.ArrowConnector.prototype.serialize = function() {
   var json = anychart.waterfallModule.ArrowConnector.base(this, 'serialize');

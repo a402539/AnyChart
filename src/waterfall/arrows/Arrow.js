@@ -33,6 +33,7 @@ anychart.waterfallModule.Arrow = function(controller) {
 
   this.connector_ = new anychart.waterfallModule.ArrowConnector();
   this.connector_.addThemes('waterfall.arrow.connector');
+  this.connector_.listenSignals(this.connectorInvalidationHandler_, this);
 };
 goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
 
@@ -58,7 +59,6 @@ anychart.waterfallModule.Arrow.OWN_DESCRIPTORS = (function() {
   var map = {};
 
   anychart.core.settings.createDescriptors(map, [
-    // [anychart.enums.PropertyHandlerType.MULTI_ARG, 'stroke', anychart.core.settings.strokeNormalizer],
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'from', anychart.core.settings.asIsNormalizer],
     [anychart.enums.PropertyHandlerType.SINGLE_ARG, 'to', anychart.core.settings.asIsNormalizer]
   ]);
@@ -256,15 +256,16 @@ anychart.waterfallModule.Arrow.prototype.getLabelParentBounds = function() {
  */
 anychart.waterfallModule.Arrow.prototype.drawLabel = function() {
   var text = this.getText();
-  var drawSettings = this.drawSettings();
 
-  text.renderTo(this.controller_.labelsLayerEl_);
-
-  var labelParentBounds = this.getLabelParentBounds();
-
-  text.putAt(labelParentBounds);
-
-  text.finalizeComplexity();
+  if (this.label().enabled()) {
+    text.renderTo(this.controller_.labelsLayerEl_);
+  
+    var labelParentBounds = this.getLabelParentBounds();
+  
+    text.putAt(labelParentBounds);
+  
+    text.finalizeComplexity();
+  }
 };
 
 
@@ -385,6 +386,14 @@ anychart.waterfallModule.Arrow.prototype.drawSettings = function(opt_value) {
  */
 anychart.waterfallModule.Arrow.prototype.connector = function() {
   return this.connector_;
+};
+
+
+/**
+ * Connector invalidation handler.
+ */
+anychart.waterfallModule.Arrow.prototype.connectorInvalidationHandler_ = function() {
+  this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
 };
 
 
