@@ -658,9 +658,10 @@ anychart.waterfallModule.ArrowsController.prototype.getArrowsSortFunction = func
 
 
 /**
+ * Positions from/to points of the arrows so, that they do not intersect.
  *
  * @param {Array.<anychart.waterfallModule.Arrow>} arrows - Array of arrows.
- * @param {number} xScaleIndex - Index of the point where arrows intersect.
+ * @param {number} xScaleIndex - Index of the xScale point where arrows intersect.
  */
 anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = function(arrows, xScaleIndex) {
   var stackBounds = this.chart_.getStackBounds(xScaleIndex);
