@@ -260,11 +260,11 @@ anychart.waterfallModule.Arrow.prototype.drawLabel = function() {
 
   if (this.label().enabled()) {
     text.renderTo(this.controller_.labelsLayerEl_);
-  
+
     var labelParentBounds = this.getLabelParentBounds();
-  
+
     text.putAt(labelParentBounds);
-  
+
     text.finalizeComplexity();
   }
 };
@@ -392,6 +392,8 @@ anychart.waterfallModule.Arrow.prototype.connector = function() {
 
 /**
  * Connector invalidation handler.
+ *
+ * @private
  */
 anychart.waterfallModule.Arrow.prototype.connectorInvalidationHandler_ = function() {
   this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
