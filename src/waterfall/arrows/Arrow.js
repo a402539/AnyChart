@@ -241,10 +241,11 @@ anychart.waterfallModule.Arrow.prototype.getLabelParentBounds = function() {
         drawSettings.toPoint.x - drawSettings.fromPoint.x
     );
   } else {
+    var leftX = Math.min(drawSettings.fromPoint.x, drawSettings.toPoint.x);
     return new anychart.math.Rect(
-        drawSettings.fromPoint.x,
+        leftX,
         drawSettings.horizontalY,
-        drawSettings.toPoint.x - drawSettings.fromPoint.x,
+        Math.abs(drawSettings.toPoint.x - drawSettings.fromPoint.x),
         0
     );
   }
