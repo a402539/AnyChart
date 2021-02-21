@@ -1070,7 +1070,7 @@ anychart.waterfallModule.Chart.prototype.getStackBounds = function(index) {
  * @return {number} - Number of stacks on waterfall chart.
  */
 anychart.waterfallModule.Chart.prototype.getStacksCount = function() {
-  return this.drawingPlans[0].data.length;
+  return this.drawingPlans.length == 0 ? 0 : this.drawingPlans[0].data.length;
 };
 
 
