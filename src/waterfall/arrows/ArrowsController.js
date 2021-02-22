@@ -48,10 +48,31 @@ goog.inherits(anychart.waterfallModule.ArrowsController, anychart.core.VisualBas
  * @type {number}
  */
 anychart.waterfallModule.ArrowsController.prototype.SUPPORTED_SIGNALS =
-    anychart.core.Base.prototype.SUPPORTED_SIGNALS |
+    anychart.core.VisualBase.prototype.SUPPORTED_SIGNALS |
     anychart.Signal.NEEDS_REDRAW |
     anychart.Signal.MEASURE_COLLECT | //Signal for Measuriator to collect labels to measure.
     anychart.Signal.MEASURE_BOUNDS; //Signal for Measuriator to measure the bounds of collected labels.
+
+
+/**
+ * States supported by arrow.
+ *
+ * @enum {string}
+ */
+anychart.waterfallModule.ArrowsController.SUPPORTED_STATES = {
+  RECALCULATION: 'recalculation',
+  APPEARANCE: 'appearance'
+};
+
+
+anychart.consistency.supportStates(
+    anychart.waterfallModule.ArrowsController,
+    anychart.enums.Store.WATERFALL,
+    [
+      anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.RECALCULATION,
+      anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.APPEARANCE
+    ]
+);
 
 
 /**
@@ -178,7 +199,7 @@ anychart.waterfallModule.ArrowsController.prototype.addArrowToScaleValuesArray =
 
   var isRightDirection = this.isArrowRight(arrow);
 
-  if (arrow.enabled()) {
+  if (arrow.enabled() && arrow.isCorrect()) {
     if (isRightDirection) {
       this.xScaleValueToArrows_[fromIndex].push(arrow);
       this.xScaleValueToArrows_[toIndex].unshift(arrow);
@@ -206,7 +227,7 @@ anychart.waterfallModule.ArrowsController.prototype.createArrowDrawSettings = fu
 
   var drawSettings;
 
-  if (arrow.enabled()) {
+  if (arrow.enabled() && arrow.isCorrect()) {
     // Minimal gap from start/end point to the horizontal line.
     var minimalGap = 15;
     var isUp = this.chart_.getStackSum(fromIndex, 'diff') >= 0;
@@ -512,7 +533,7 @@ anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = fun
 
     var isArrowCorrect = correctFromTo && isUnique;
 
-    arrow.enabled(isArrowCorrect);
+    arrow.isCorrect(isArrowCorrect);
 
     previousArrows.push(arrow);
   }
@@ -728,7 +749,7 @@ anychart.waterfallModule.ArrowsController.prototype.createDrawSettings = functio
   for (var i = 0; i < this.arrows_.length; i++) {
     var arrow = this.arrows_[i];
 
-    if (arrow.enabled()) {
+    if (arrow.enabled() && arrow.isCorrect()) {
       this.createArrowDrawSettings(arrow);
 
       this.positionArrow(arrow, positionedArrows);
@@ -797,24 +818,56 @@ anychart.waterfallModule.ArrowsController.prototype.initLayers_ = function() {
  * Prepare and draw arrows.
  */
 anychart.waterfallModule.ArrowsController.prototype.draw = function() {
+  if (!this.arrows_.length) {
+    return;
+  }
+
+  var isContainerInvalidated = this.hasInvalidationState(anychart.ConsistencyState.CONTAINER);
+
   this.initLayers_();
 
-  this.checkArrowsCorrectness();
+  if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+    for (var i = 0; i < this.arrows_.length; i++) {
+      var arrow = this.arrows_[i];
+      arrow.suspendSignalsDispatching();
+      arrow.invalidate(anychart.ConsistencyState.BOUNDS);
+      arrow.resumeSignalsDispatching(false);
+    }
 
-  this.applyLabelsStyle();
+    this.invalidateMultiState(
+        anychart.enums.Store.WATERFALL,
+        [
+          anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.RECALCULATION,
+          anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.APPEARANCE
+        ]
+    );
+    this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  }
 
-  // We need arrows labels bounds, when calculating arrows positions.
-  this.dispatchSignal(anychart.Signal.MEASURE_BOUNDS | anychart.Signal.MEASURE_COLLECT);
-  anychart.measuriator.measure();
+  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.RECALCULATION)) {
+    this.checkArrowsCorrectness();
 
-  this.createDrawSettings();
+    this.applyLabelsStyle();
 
-  var arrowsLayer = this.getArrowsLayer();
+    // We need arrows labels bounds, when calculating arrows positions.
+    this.dispatchSignal(anychart.Signal.MEASURE_BOUNDS | anychart.Signal.MEASURE_COLLECT);
+    anychart.measuriator.measure();
 
-  for (var i = 0; i < this.arrows_.length; i++) {
-    var arrow = this.arrows_[i];
-    arrow.container(arrowsLayer);
-    arrow.draw();
+    this.createDrawSettings();
+
+    this.markStateConsistent(anychart.enums.Store.WATERFALL, anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.RECALCULATION);
+  }
+
+  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.APPEARANCE)) {
+    var arrowsLayer = this.getArrowsLayer();
+
+    for (var i = 0; i < this.arrows_.length; i++) {
+      var arrow = this.arrows_[i];
+      arrow.container(arrowsLayer);
+      arrow.draw();
+    }
+
+    this.markStateConsistent(anychart.enums.Store.WATERFALL, anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.APPEARANCE);
   }
 };
 
@@ -888,10 +941,25 @@ anychart.waterfallModule.ArrowsController.prototype.addArrow = function(opt_sett
 /**
  * Arrow invalidation handler.
  *
+ * @param {anychart.SignalEvent} event Event object.
  * @private
  */
-anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = function() {
-  this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
+anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = function(event) {
+  var states = [anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.APPEARANCE];
+  if (event.hasSignal(anychart.Signal.NEEDS_RECALCULATION)) {
+    states.push(
+        anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.RECALCULATION
+    );
+
+    for (var i = 0; i < this.arrows_.length; i++) {
+      var arrow = this.arrows_[i];
+      arrow.suspendSignalsDispatching();
+      arrow.invalidateStore(anychart.enums.Store.WATERFALL);
+      arrow.resumeSignalsDispatching(false);
+    }
+  }
+
+  this.invalidateMultiState(anychart.enums.Store.WATERFALL, states, anychart.Signal.NEEDS_REDRAW);
 };
 
 

@@ -21,19 +21,36 @@ anychart.waterfallModule.Arrow = function(controller) {
 
   this.addThemes('waterfall.arrow');
 
+  /**
+   * Arrows controller instance.
+   *
+   * @type {anychart.waterfallModule.ArrowsController}
+   */
   this.controller_ = controller;
 
   anychart.core.settings.createDescriptorsMeta(
       this.descriptorsMeta,
       [
-        ['from', 0, anychart.Signal.NEEDS_REDRAW],
-        ['to', 0, anychart.Signal.NEEDS_REDRAW]
+        ['from', 0, anychart.Signal.NEEDS_RECALCULATION],
+        ['to', 0, anychart.Signal.NEEDS_RECALCULATION]
       ]
   );
 
+  /**
+   * Arrow connector instance.
+   *
+   * @type {anychart.waterfallModule.ArrowConnector}
+   */
   this.connector_ = new anychart.waterfallModule.ArrowConnector();
   this.connector_.addThemes('waterfall.arrow.connector');
   this.connector_.listenSignals(this.connectorInvalidationHandler_, this);
+
+  /**
+   * If arrow has correct settings.
+   *
+   * @type {boolean}
+   */
+  this.isCorrect_ = true;
 };
 goog.inherits(anychart.waterfallModule.Arrow, anychart.core.VisualBase);
 
@@ -68,12 +85,24 @@ anychart.core.settings.populate(anychart.waterfallModule.Arrow, anychart.waterfa
 
 
 /**
- * Supported consistency states.
- * @type {number}
+ * States supported by arrow.
+ *
+ * @enum {string}
  */
-anychart.waterfallModule.Arrow.prototype.SUPPORTED_CONSISTENCY_STATES =
-    anychart.core.VisualBase.prototype.SUPPORTED_CONSISTENCY_STATES |
-    anychart.ConsistencyState.APPEARANCE;
+anychart.waterfallModule.Arrow.SUPPORTED_STATES = {
+  LABELS: 'labels',
+  APPEARANCE: 'appearance'
+};
+
+
+anychart.consistency.supportStates(
+    anychart.waterfallModule.Arrow,
+    anychart.enums.Store.WATERFALL,
+    [
+      anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS,
+      anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE
+    ]
+);
 
 
 /**
@@ -84,6 +113,7 @@ anychart.waterfallModule.Arrow.prototype.SUPPORTED_CONSISTENCY_STATES =
 anychart.waterfallModule.Arrow.prototype.SUPPORTED_SIGNALS =
     anychart.Signal.NEEDS_REDRAW_APPEARANCE |
     anychart.Signal.NEEDS_REDRAW |
+    anychart.Signal.NEEDS_RECALCULATION |
     anychart.Signal.NEEDS_REDRAW_LABELS;
 
 
@@ -119,6 +149,7 @@ anychart.waterfallModule.Arrow.prototype.getArrowHeadPath = function() {
  * Draws arrow connector and head.
  */
 anychart.waterfallModule.Arrow.prototype.drawConnector = function() {
+  this.getArrowPath().clear();
   var drawSettings = this.drawSettings();
 
   var path = this.getArrowPath();
@@ -177,6 +208,7 @@ anychart.waterfallModule.Arrow.prototype.drawConnector = function() {
  * Draws arrow head.
  */
 anychart.waterfallModule.Arrow.prototype.drawHead = function() {
+  this.getArrowHeadPath().clear();
   var stroke = /** @type {acgraph.vector.Stroke|string} */(this.connector().getOption('stroke'));
   var thickness = anychart.utils.extractThickness(stroke);
 
@@ -270,10 +302,8 @@ anychart.waterfallModule.Arrow.prototype.drawLabel = function() {
 };
 
 
-/**
- * Clear arrow paths and label.
- */
-anychart.waterfallModule.Arrow.prototype.clear = function() {
+/** @inheritDoc */
+anychart.waterfallModule.Arrow.prototype.remove = function() {
   this.getText().renderTo(null);
   this.getArrowPath().clear();
   this.getArrowHeadPath().clear();
@@ -284,12 +314,42 @@ anychart.waterfallModule.Arrow.prototype.clear = function() {
  * Draws arrow.
  */
 anychart.waterfallModule.Arrow.prototype.draw = function() {
-  this.clear();
+  if (!this.checkDrawingNeeded()) {
+    return;
+  }
 
-  if (this.enabled()) {
+  if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+    this.invalidateMultiState(
+        anychart.enums.Store.WATERFALL,
+        [
+          anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS,
+          anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE
+        ]
+    );
+    this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  }
+
+  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE)) {
     this.drawConnector();
     this.drawHead();
+
+    this.markStateConsistent(
+        anychart.enums.Store.WATERFALL,
+        anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE
+    );
+  }
+
+  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS)) {
     this.drawLabel();
+
+    this.markStateConsistent(
+        anychart.enums.Store.WATERFALL,
+        anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS
+    );
+  }
+
+  if (!this.isCorrect()) {
+    this.remove();
   }
 };
 
@@ -324,7 +384,11 @@ anychart.waterfallModule.Arrow.prototype.label = function(opt_value) {
  * @private
  */
 anychart.waterfallModule.Arrow.prototype.labelsSettingsInvalidated_ = function() {
-  this.dispatchSignal(anychart.Signal.NEEDS_REDRAW_LABELS);
+  this.invalidateState(
+      anychart.enums.Store.WATERFALL,
+      anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE,
+      anychart.Signal.NEEDS_RECALCULATION
+  );
 };
 
 
@@ -391,12 +455,28 @@ anychart.waterfallModule.Arrow.prototype.connector = function() {
 
 
 /**
+ * Getter/setter if arrow is correct.
+ *
+ * @param {boolean=} opt_value - If arrow is correct.
+ * @return {boolean|anychart.waterfallModule.Arrow}
+ */
+anychart.waterfallModule.Arrow.prototype.isCorrect = function(opt_value) {
+  if (goog.isDef(opt_value)) {
+    this.isCorrect_ = opt_value;
+    return this;
+  }
+
+  return this.isCorrect_;
+};
+
+
+/**
  * Connector invalidation handler.
  *
  * @private
  */
 anychart.waterfallModule.Arrow.prototype.connectorInvalidationHandler_ = function() {
-  this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
+  this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE, anychart.Signal.NEEDS_REDRAW_APPEARANCE);
 };
 
 

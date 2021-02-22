@@ -1311,6 +1311,10 @@ anychart.waterfallModule.Chart.prototype.drawArrows = function() {
 
   var boundsInvalidated = this.hasInvalidationState(anychart.ConsistencyState.BOUNDS);
 
+  if (boundsInvalidated) {
+    arrowsController.invalidate(anychart.ConsistencyState.BOUNDS);
+  }
+
   if (arrowsInvalidated || boundsInvalidated) {
     arrowsController.draw();
     this.markStateConsistent(
