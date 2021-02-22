@@ -301,6 +301,8 @@ anychart.waterfallModule.Arrow.prototype.drawLabel = function() {
     text.putAt(labelParentBounds);
 
     text.finalizeComplexity();
+  } else {
+    text.renderTo(null);
   }
 };
 
