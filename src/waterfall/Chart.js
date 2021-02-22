@@ -1429,6 +1429,10 @@ anychart.waterfallModule.Chart.prototype.setupByJSON = function(config, opt_defa
     this.stackLabels().setupInternal(!!opt_default, stackLabelsConfig);
   }
 
+  if (config['arrows']) {
+    this.arrowsController().setupInternal(!!opt_default, config['arrows']);
+  }
+
   var connectorsConfig = config['connectors'];
 
   // Field connectorStroke must be passed to the connectors entity.
