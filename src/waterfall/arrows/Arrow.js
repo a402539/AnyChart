@@ -24,6 +24,7 @@ anychart.waterfallModule.Arrow = function(controller) {
   /**
    * Arrows controller instance.
    *
+   * @private
    * @type {anychart.waterfallModule.ArrowsController}
    */
   this.controller_ = controller;
@@ -39,6 +40,7 @@ anychart.waterfallModule.Arrow = function(controller) {
   /**
    * Arrow connector instance.
    *
+   * @private
    * @type {anychart.waterfallModule.ArrowConnector}
    */
   this.connector_ = new anychart.waterfallModule.ArrowConnector();
@@ -48,6 +50,7 @@ anychart.waterfallModule.Arrow = function(controller) {
   /**
    * If arrow has correct settings.
    *
+   * @private
    * @type {boolean}
    */
   this.isCorrect_ = true;
