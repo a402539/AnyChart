@@ -115,41 +115,60 @@ anychart.consistency.supportStates(
  */
 anychart.waterfallModule.Arrow.prototype.SUPPORTED_SIGNALS =
     anychart.Signal.NEEDS_REDRAW_APPEARANCE |
-    anychart.Signal.NEEDS_REDRAW |
     anychart.Signal.NEEDS_RECALCULATION |
-    anychart.Signal.NEEDS_REDRAW_LABELS;
+    anychart.Signal.ENABLED_STATE_CHANGED;
 
 
 /**
- * Returns arrow connector path.
- *
- * @return {acgraph.vector.Path}
+ * Draws arrow.
  */
-anychart.waterfallModule.Arrow.prototype.getArrowPath = function() {
-  if (!this.arrowPath_) {
-    this.arrowPath_ = this.container().path();
+anychart.waterfallModule.Arrow.prototype.draw = function() {
+  if (!this.checkDrawingNeeded()) {
+    return;
   }
 
-  return this.arrowPath_;
+  if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
+    this.invalidateMultiState(
+        anychart.enums.Store.WATERFALL,
+        [
+          anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS,
+          anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE
+        ]
+    );
+    this.markConsistent(anychart.ConsistencyState.BOUNDS);
+  }
+
+  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE)) {
+    if (this.isCorrect()) {
+      this.drawConnector();
+      this.drawHead();
+    }
+
+    this.markStateConsistent(
+        anychart.enums.Store.WATERFALL,
+        anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE
+    );
+  }
+
+  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS)) {
+    if (this.isCorrect()) {
+      this.drawLabel();
+    }
+
+    this.markStateConsistent(
+        anychart.enums.Store.WATERFALL,
+        anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS
+    );
+  }
+
+  if (!this.isCorrect()) {
+    this.remove();
+  }
 };
 
 
 /**
- * Returns arrow head path.
- *
- * @return {acgraph.vector.Path}
- */
-anychart.waterfallModule.Arrow.prototype.getArrowHeadPath = function() {
-  if (!goog.isDef(this.arrowHeadPath_)) {
-    this.arrowHeadPath_ = this.container().path();
-  }
-
-  return this.arrowHeadPath_;
-};
-
-
-/**
- * Draws arrow connector and head.
+ * Draws arrow connector.
  */
 anychart.waterfallModule.Arrow.prototype.drawConnector = function() {
   this.getArrowPath().clear();
@@ -236,18 +255,21 @@ anychart.waterfallModule.Arrow.prototype.drawHead = function() {
       shiftedToPoint.x,
       shiftedToPoint.y
   );
+
   anychart.core.drawers.line(
       arrowHeadPath,
       isVertical,
       shiftedToPoint.x - (arrowHeadSize / 2),
       shiftedToPoint.y + arrowHeadYDelta
   );
+
   anychart.core.drawers.line(
       arrowHeadPath,
       isVertical,
       shiftedToPoint.x + (arrowHeadSize / 2),
       shiftedToPoint.y + arrowHeadYDelta
   );
+
   anychart.core.drawers.line(
       arrowHeadPath,
       isVertical,
@@ -257,33 +279,6 @@ anychart.waterfallModule.Arrow.prototype.drawHead = function() {
 
   arrowHeadPath.fill(stroke);
   arrowHeadPath.stroke('none');
-};
-
-
-/**
- * Returns bounds in which label is positioned.
- *
- * @return {anychart.math.Rect}
- */
-anychart.waterfallModule.Arrow.prototype.getLabelParentBounds = function() {
-  var drawSettings = this.drawSettings();
-
-  if (this.controller_.isVertical()) {
-    return new anychart.math.Rect(
-        drawSettings.horizontalY,
-        drawSettings.fromPoint.x,
-        0,
-        drawSettings.toPoint.x - drawSettings.fromPoint.x
-    );
-  } else {
-    var leftX = Math.min(drawSettings.fromPoint.x, drawSettings.toPoint.x);
-    return new anychart.math.Rect(
-        leftX,
-        drawSettings.horizontalY,
-        Math.abs(drawSettings.toPoint.x - drawSettings.fromPoint.x),
-        0
-    );
-  }
 };
 
 
@@ -316,49 +311,29 @@ anychart.waterfallModule.Arrow.prototype.remove = function() {
 
 
 /**
- * Draws arrow.
+ * Returns bounds in which label is positioned.
+ *
+ * @return {anychart.math.Rect}
  */
-anychart.waterfallModule.Arrow.prototype.draw = function() {
-  if (!this.checkDrawingNeeded()) {
-    return;
-  }
+anychart.waterfallModule.Arrow.prototype.getLabelParentBounds = function() {
+  var drawSettings = this.drawSettings();
 
-  if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
-    this.invalidateMultiState(
-        anychart.enums.Store.WATERFALL,
-        [
-          anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS,
-          anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE
-        ]
+  if (this.controller_.isVertical()) {
+    return new anychart.math.Rect(
+        drawSettings.horizontalY,
+        drawSettings.fromPoint.x,
+        0,
+        drawSettings.toPoint.x - drawSettings.fromPoint.x
     );
-    this.markConsistent(anychart.ConsistencyState.BOUNDS);
-  }
-
-  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE)) {
-    if (this.isCorrect()) {
-      this.drawConnector();
-      this.drawHead();
-    }
-
-    this.markStateConsistent(
-        anychart.enums.Store.WATERFALL,
-        anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE
+  } else {
+    // Fix negative width.
+    var leftX = Math.min(drawSettings.fromPoint.x, drawSettings.toPoint.x);
+    return new anychart.math.Rect(
+        leftX,
+        drawSettings.horizontalY,
+        Math.abs(drawSettings.toPoint.x - drawSettings.fromPoint.x),
+        0
     );
-  }
-
-  if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS)) {
-    if (this.isCorrect()) {
-      this.drawLabel();
-    }
-
-    this.markStateConsistent(
-        anychart.enums.Store.WATERFALL,
-        anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS
-    );
-  }
-
-  if (!this.isCorrect()) {
-    this.remove();
   }
 };
 
@@ -398,29 +373,6 @@ anychart.waterfallModule.Arrow.prototype.labelsSettingsInvalidated_ = function()
       anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE,
       anychart.Signal.NEEDS_RECALCULATION
   );
-};
-
-
-/** @inheritDoc */
-anychart.waterfallModule.Arrow.prototype.setupByJSON = function(config, opt_default) {
-  anychart.waterfallModule.Arrow.base(this, 'setupByJSON', config, opt_default);
-
-  this.label().setupInternal(!!opt_default, config['label']);
-  this.connector().setupInternal(!!opt_default, config['connector']);
-
-  anychart.core.settings.deserialize(this, anychart.waterfallModule.Arrow.OWN_DESCRIPTORS, config, opt_default);
-};
-
-
-/** @inheritDoc */
-anychart.waterfallModule.Arrow.prototype.serialize = function() {
-  var json = anychart.waterfallModule.Arrow.base(this, 'serialize');
-  anychart.core.settings.serialize(this, anychart.waterfallModule.Arrow.OWN_DESCRIPTORS, json, void 0, void 0, true);
-
-  json['label'] = this.label().serialize();
-  json['connector'] = this.connector().serialize();
-
-  return json;
 };
 
 
@@ -480,12 +432,63 @@ anychart.waterfallModule.Arrow.prototype.isCorrect = function(opt_value) {
 
 
 /**
+ * Returns arrow connector path.
+ *
+ * @return {acgraph.vector.Path}
+ */
+anychart.waterfallModule.Arrow.prototype.getArrowPath = function() {
+  if (!this.arrowPath_) {
+    this.arrowPath_ = this.container().path();
+  }
+
+  return this.arrowPath_;
+};
+
+
+/**
+ * Returns arrow head path.
+ *
+ * @return {acgraph.vector.Path}
+ */
+anychart.waterfallModule.Arrow.prototype.getArrowHeadPath = function() {
+  if (!goog.isDef(this.arrowHeadPath_)) {
+    this.arrowHeadPath_ = this.container().path();
+  }
+
+  return this.arrowHeadPath_;
+};
+
+
+/**
  * Connector invalidation handler.
  *
  * @private
  */
 anychart.waterfallModule.Arrow.prototype.connectorInvalidationHandler_ = function() {
   this.invalidateState(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE, anychart.Signal.NEEDS_REDRAW_APPEARANCE);
+};
+
+
+/** @inheritDoc */
+anychart.waterfallModule.Arrow.prototype.setupByJSON = function(config, opt_default) {
+  anychart.waterfallModule.Arrow.base(this, 'setupByJSON', config, opt_default);
+
+  this.label().setupInternal(!!opt_default, config['label']);
+  this.connector().setupInternal(!!opt_default, config['connector']);
+
+  anychart.core.settings.deserialize(this, anychart.waterfallModule.Arrow.OWN_DESCRIPTORS, config, opt_default);
+};
+
+
+/** @inheritDoc */
+anychart.waterfallModule.Arrow.prototype.serialize = function() {
+  var json = anychart.waterfallModule.Arrow.base(this, 'serialize');
+  anychart.core.settings.serialize(this, anychart.waterfallModule.Arrow.OWN_DESCRIPTORS, json, void 0, void 0, true);
+
+  json['label'] = this.label().serialize();
+  json['connector'] = this.connector().serialize();
+
+  return json;
 };
 
 
