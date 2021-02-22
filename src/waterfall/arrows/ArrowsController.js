@@ -933,6 +933,15 @@ anychart.waterfallModule.ArrowsController.prototype.addArrow = function(opt_sett
 
   this.arrows_.push(arrow);
 
+  this.invalidateMultiState(
+      anychart.enums.Store.WATERFALL,
+      [
+        anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.APPEARANCE,
+        anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.RECALCULATION
+      ],
+      anychart.Signal.NEEDS_REDRAW
+  );
+
   this.dispatchSignal(anychart.Signal.NEEDS_REDRAW);
   return arrow;
 };
