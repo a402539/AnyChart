@@ -335,8 +335,10 @@ anychart.waterfallModule.Arrow.prototype.draw = function() {
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.APPEARANCE)) {
-    this.drawConnector();
-    this.drawHead();
+    if (this.isCorrect()) {
+      this.drawConnector();
+      this.drawHead();
+    }
 
     this.markStateConsistent(
         anychart.enums.Store.WATERFALL,
@@ -345,7 +347,9 @@ anychart.waterfallModule.Arrow.prototype.draw = function() {
   }
 
   if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.Arrow.SUPPORTED_STATES.LABELS)) {
-    this.drawLabel();
+    if (this.isCorrect()) {
+      this.drawLabel();
+    }
 
     this.markStateConsistent(
         anychart.enums.Store.WATERFALL,
