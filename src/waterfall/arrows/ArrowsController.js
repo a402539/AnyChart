@@ -1025,6 +1025,30 @@ anychart.waterfallModule.ArrowsController.prototype.getArrowsLayer = function() 
 
 
 /** @inheritDoc */
+anychart.waterfallModule.ArrowsController.prototype.setupByJSON = function(config, opt_default) {
+  anychart.waterfallModule.ArrowsController.base(this, 'setupByJSON', config, opt_default);
+
+  for (var i = 0; i < config.length; i++) {
+    var arrowSettings = config[i];
+    this.addArrow(arrowSettings);
+  }
+};
+
+
+/** @inheritDoc */
+anychart.waterfallModule.ArrowsController.prototype.serialize = function() {
+  var json = [];
+
+  for (var i = 0; i < this.arrows_.length; i++) {
+    var arrow = this.arrows_[i];
+    json.push(arrow.serialize());
+  }
+
+  return json;
+};
+
+
+/** @inheritDoc */
 anychart.waterfallModule.ArrowsController.prototype.disposeInternal = function() {
   goog.disposeAll(
       this.arrows_,

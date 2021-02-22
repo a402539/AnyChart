@@ -1414,6 +1414,7 @@ anychart.waterfallModule.Chart.prototype.serialize = function() {
   anychart.core.settings.serialize(this, anychart.waterfallModule.Chart.PROPERTY_DESCRIPTORS, json['chart']);
   json['chart']['stackLabels'] = this.stackLabels().serialize();
   json['chart']['connectors'] = this.connectors().serialize();
+  json['chart']['arrows'] = this.arrowsController().serialize();
 
   return json;
 };
