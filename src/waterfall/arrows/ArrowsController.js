@@ -898,6 +898,8 @@ anychart.waterfallModule.ArrowsController.prototype.removeArrowAt = function(ind
   var arrow = this.arrows_[index];
 
   if (goog.isDef(arrow)) {
+    arrow.unlistenSignals(this.arrowInvalidationHandler_, this);
+
     goog.array.splice(this.arrows_, index, 1);
     goog.dispose(arrow);
     return true;

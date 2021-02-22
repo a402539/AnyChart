@@ -442,7 +442,7 @@ anychart.waterfallModule.Arrow.prototype.getText = function() {
  */
 anychart.waterfallModule.Arrow.prototype.drawSettings = function(opt_value) {
   if (goog.isDef(opt_value)) {
-    this.drawSettings_ = opt_value;
+    this.drawSettings_= opt_value;
   }
 
   return this.drawSettings_;
