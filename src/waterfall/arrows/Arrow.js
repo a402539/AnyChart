@@ -245,7 +245,7 @@ anychart.waterfallModule.Arrow.prototype.drawHead = function() {
   var arrowHeadPath = this.getArrowHeadPath();
   var isArrowUp = drawSettings.isUp;
   var arrowHeadSize = 10;
-  var arrowHeadYDelta = isArrowUp === this.controller_.normalUpDirection() ? -arrowHeadSize : arrowHeadSize;
+  var arrowHeadYDelta = isArrowUp === this.controller_.yScaleInverted() ? -arrowHeadSize : arrowHeadSize;
 
   var isVertical = this.controller_.isVertical();
 

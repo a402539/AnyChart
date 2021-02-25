@@ -1070,7 +1070,7 @@ anychart.waterfallModule.Chart.prototype.getStackBounds = function(index) {
  * @return {number} - Number of stacks on waterfall chart.
  */
 anychart.waterfallModule.Chart.prototype.getStacksCount = function() {
-  return this.drawingPlans.length == 0 ? 0 : this.drawingPlans[0].data.length;
+  return this.drawingPlans.length ? this.drawingPlans[0].data.length : 0;
 };
 
 
@@ -1290,7 +1290,7 @@ anychart.waterfallModule.Chart.prototype.drawArrows = function() {
 
   if (!this.arrowsLayer_) {
     this.arrowsLayer_ = this.rootElement.layer();
-    this.arrowsLayer_.zIndex(41); // Above all.
+    this.arrowsLayer_.zIndex(anychart.waterfallModule.ArrowsController.ARROWS_ZINDEX);
     arrowsController.container(this.arrowsLayer_);
   }
 
