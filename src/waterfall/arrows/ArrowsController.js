@@ -425,10 +425,9 @@ anychart.waterfallModule.ArrowsController.prototype.getStackFullBounds = functio
   }
   var seriesLabelsBounds = this.getAllStackLabelsBounds(index);
 
-  for (var i = 0; i < seriesLabelsBounds.length; i++) {
-    var labelBounds = seriesLabelsBounds[i];
-    stackBounds = goog.math.Rect.boundingRect(stackBounds, labelBounds);
-  }
+  goog.array.forEach(seriesLabelsBounds, function(labelBounds) {
+    stackBounds.boundingRect(labelBounds);
+  });
 
   return stackBounds;
 };
@@ -530,8 +529,7 @@ anychart.waterfallModule.ArrowsController.prototype.isArrowUnique = function(arr
 anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = function() {
   var previousArrows = [];
 
-  for (var i = 0; i < this.arrows_.length; i++) {
-    var arrow = this.arrows_[i];
+  goog.array.forEach(this.arrows_, function(arrow) {
     var correctFromTo = this.arrowCorrectFromTo(arrow);
     var isUnique = this.isArrowUnique(previousArrows, arrow);
 
@@ -540,7 +538,7 @@ anychart.waterfallModule.ArrowsController.prototype.checkArrowsCorrectness = fun
     arrow.isCorrect(isArrowCorrect);
 
     previousArrows.push(arrow);
-  }
+  }, this);
 };
 
 
@@ -567,22 +565,20 @@ anychart.waterfallModule.ArrowsController.prototype.moveArrow = function(arrow, 
   var arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
 
   // Ensure we always go from the lowest lying to highest lying stack bounds.
-  fixedBounds.sort(function(prev, next) {
+  goog.array.sort(fixedBounds, function(prev, next) {
     return isUp === isNormalUpDirection ?
         next.getBottom() - prev.getBottom() :
         prev.getTop() - next.getTop();
   });
 
-  for (var i = 0; i < fixedBounds.length; i++) {
-    var sb = fixedBounds[i];
-
-    var delta = this.getIntersectionDelta(sb, arrowBounds, isUp);
+  goog.array.forEach(fixedBounds, function(fixedBoundsItem) {
+    var delta = this.getIntersectionDelta(fixedBoundsItem, arrowBounds, isUp);
     if (delta) {
       newDrawSettings.horizontalY += delta;
 
       arrowBounds = this.createArrowBounds(newDrawSettings, arrow);
     }
-  }
+  }, this);
 
   arrow.drawSettings(newDrawSettings);
 };
@@ -660,17 +656,16 @@ anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = fu
 
   goog.array.sort(arrows, this.getArrowsSortFunction(xScaleIndex));
 
-  for (var i = 0; i < arrows.length; i++) {
-    var arrow = arrows[i];
+  goog.array.forEach(arrows, function(arrow, index) {
     var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
 
-    var xValue = stackBounds.getLeft() + ((i + 1) * step);
+    var xValue = stackBounds.getLeft() + ((index + 1) * step);
     if (fromIndex === xScaleIndex) {
       arrow.drawSettings().fromPoint.x = xValue;
     } else {
       arrow.drawSettings().toPoint.x = xValue;
     }
-  }
+  }, this);
 };
 
 
@@ -678,8 +673,7 @@ anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = fu
  * Positions from/to points of arrows so, that they do not overlap.
  */
 anychart.waterfallModule.ArrowsController.prototype.positionFromToPoints = function() {
-  for (var i = 0; i < this.xScaleIndexToArrows_.length; i++) {
-    var arrows = this.xScaleIndexToArrows_[i];
+  goog.array.forEach(this.xScaleIndexToArrows_, function(arrows, index) {
     if (arrows && arrows.length > 1) {
       var upArrows = goog.array.filter(arrows, function(arrow) {
         return this.arrowGrowsUp(arrow);
@@ -689,10 +683,10 @@ anychart.waterfallModule.ArrowsController.prototype.positionFromToPoints = funct
         return !this.arrowGrowsUp(arrow);
       }, this);
 
-      this.modifyArrowsFromToPoint(upArrows, i);
-      this.modifyArrowsFromToPoint(downArrows, i);
+      this.modifyArrowsFromToPoint(upArrows, index);
+      this.modifyArrowsFromToPoint(downArrows, index);
     }
-  }
+  }, this);
 };
 
 
@@ -704,9 +698,8 @@ anychart.waterfallModule.ArrowsController.prototype.calculateArrowsPositions = f
 
   this.xScaleIndexToArrows_.length = 0;
   var positionedArrows = [];
-  for (var i = 0; i < this.arrows_.length; i++) {
-    var arrow = this.arrows_[i];
 
+  goog.array.forEach(this.arrows_, function(arrow) {
     if (arrow.enabled() && arrow.isCorrect()) {
       this.createArrowDrawSettings(arrow);
 
@@ -716,7 +709,7 @@ anychart.waterfallModule.ArrowsController.prototype.calculateArrowsPositions = f
 
       positionedArrows.push(arrow);
     }
-  }
+  }, this);
 
   this.positionFromToPoints();
 };
@@ -726,10 +719,9 @@ anychart.waterfallModule.ArrowsController.prototype.calculateArrowsPositions = f
  * Applies labels style.
  */
 anychart.waterfallModule.ArrowsController.prototype.applyLabelsStyle = function() {
-  for (var i = 0; i < this.arrows_.length; i++) {
-    var arrow = this.arrows_[i];
+  goog.array.forEach(this.arrows_, function(arrow) {
     var flatSettings = arrow.label().flatten();
-    var text = this.arrows_[i].getText();
+    var text = arrow.getText();
 
     var from = arrow.getOption('from');
     var to = arrow.getOption('to');
@@ -746,7 +738,7 @@ anychart.waterfallModule.ArrowsController.prototype.applyLabelsStyle = function(
     text.style(flatSettings);
     text.prepareComplexity();
     text.applySettings();
-  }
+  }, this);
 };
 
 
@@ -781,12 +773,11 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
   this.initLayers_();
 
   if (this.hasInvalidationState(anychart.ConsistencyState.BOUNDS)) {
-    for (var i = 0; i < this.arrows_.length; i++) {
-      var arrow = this.arrows_[i];
+    goog.array.forEach(this.arrows_, function(arrow) {
       arrow.suspendSignalsDispatching();
       arrow.invalidate(anychart.ConsistencyState.BOUNDS);
       arrow.resumeSignalsDispatching(false);
-    }
+    }, this);
 
     this.invalidateMultiState(
         anychart.enums.Store.WATERFALL,
@@ -815,11 +806,10 @@ anychart.waterfallModule.ArrowsController.prototype.draw = function() {
   if (this.hasStateInvalidation(anychart.enums.Store.WATERFALL, anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.APPEARANCE)) {
     var arrowsLayer = this.getArrowsLayer();
 
-    for (var i = 0; i < this.arrows_.length; i++) {
-      var arrow = this.arrows_[i];
+    goog.array.forEach(this.arrows_, function(arrow) {
       arrow.container(arrowsLayer);
       arrow.draw();
-    }
+    }, this);
 
     this.markStateConsistent(anychart.enums.Store.WATERFALL, anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.APPEARANCE);
   }
@@ -915,12 +905,11 @@ anychart.waterfallModule.ArrowsController.prototype.arrowInvalidationHandler_ = 
         anychart.waterfallModule.ArrowsController.SUPPORTED_STATES.RECALCULATION
     );
 
-    for (var i = 0; i < this.arrows_.length; i++) {
-      var arrow = this.arrows_[i];
+    goog.array.forEach(this.arrows_, function(arrow) {
       arrow.suspendSignalsDispatching();
       arrow.invalidateStore(anychart.enums.Store.WATERFALL);
       arrow.resumeSignalsDispatching(false);
-    }
+    }, this);
   }
 
   this.invalidateMultiState(anychart.enums.Store.WATERFALL, states, anychart.Signal.NEEDS_REDRAW);
@@ -986,10 +975,9 @@ anychart.waterfallModule.ArrowsController.prototype.getArrowsLayer = function() 
 anychart.waterfallModule.ArrowsController.prototype.setupByJSON = function(config, opt_default) {
   anychart.waterfallModule.ArrowsController.base(this, 'setupByJSON', config, opt_default);
 
-  for (var i = 0; i < config.length; i++) {
-    var arrowSettings = config[i];
+  goog.array.forEach(/** @type {Array} */(config), function(arrowSettings) {
     this.addArrow(arrowSettings);
-  }
+  }, this);
 };
 
 
@@ -997,10 +985,9 @@ anychart.waterfallModule.ArrowsController.prototype.setupByJSON = function(confi
 anychart.waterfallModule.ArrowsController.prototype.serialize = function() {
   var json = [];
 
-  for (var i = 0; i < this.arrows_.length; i++) {
-    var arrow = this.arrows_[i];
+  goog.array.forEach(this.arrows_, function(arrow) {
     json.push(arrow.serialize());
-  }
+  }, this);
 
   return json;
 };
@@ -1022,12 +1009,10 @@ anychart.waterfallModule.ArrowsController.prototype.disposeInternal = function()
  * @return {Array.<anychart.core.ui.OptimizedText>}
  */
 anychart.waterfallModule.ArrowsController.prototype.provideMeasurements = function() {
-  var labels = [];
-  for (var i = 0; i < this.arrows_.length; i++) {
-    var arrow = this.arrows_[i];
-    var label = arrow.getText();
-    labels.push(label);
-  }
+  var labels = goog.array.map(this.arrows_, function(arrow) {
+    return arrow.getText();
+  }, this);
+
   return labels;
 };
 //endregion
