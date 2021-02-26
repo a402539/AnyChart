@@ -767,6 +767,8 @@ anychart.waterfallModule.ArrowsController.prototype.initLayers_ = function() {
  */
 anychart.waterfallModule.ArrowsController.prototype.draw = function() {
   if (!this.arrows_.length) {
+    this.markStoreConsistent(anychart.enums.Store.WATERFALL);
+    this.markConsistent(anychart.ConsistencyState.ALL);
     return;
   }
 
