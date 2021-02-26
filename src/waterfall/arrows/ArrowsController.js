@@ -488,15 +488,13 @@ anychart.waterfallModule.ArrowsController.prototype.getIntersectionDelta = funct
  * @return {boolean}
  */
 anychart.waterfallModule.ArrowsController.prototype.arrowCorrectFromTo = function(arrow) {
-  var from = arrow.getOption('from');
-  var to = arrow.getOption('to');
+  var fromValue = this.getArrowFrom(arrow);
+  var toValue = this.getArrowTo(arrow);
 
-  var xScale = this.chart_.xScale();
+  var fromStackIndex = this.getIndexFromValue(fromValue);
+  var toStackIndex = this.getIndexFromValue(toValue);
 
-  var fromStackIndex = xScale.getIndexByValue(from);
-  var toStackIndex = xScale.getIndexByValue(to);
-
-  var fromToNotEqual = from !== to;
+  var fromToNotEqual = fromValue !== toValue;
 
   return !isNaN(fromStackIndex) && !isNaN(toStackIndex) && fromToNotEqual;
 };
@@ -511,9 +509,9 @@ anychart.waterfallModule.ArrowsController.prototype.arrowCorrectFromTo = functio
  */
 anychart.waterfallModule.ArrowsController.prototype.isArrowUnique = function(array, arrow) {
   var duplicate = goog.array.find(array, function(item) {
-    return arrow.getOption('from') === item.getOption('from') &&
-        arrow.getOption('to') === item.getOption('to');
-  });
+    return this.getArrowFrom(arrow) === this.getArrowFrom(item) &&
+        this.getArrowTo(arrow) === this.getArrowTo(item);
+  }, this);
 
   return goog.isNull(duplicate);
 };
@@ -611,8 +609,11 @@ anychart.waterfallModule.ArrowsController.prototype.positionArrow = function(arr
  * @return {boolean}
  */
 anychart.waterfallModule.ArrowsController.prototype.isArrowGoingRightFromStack = function(arrow, stackIndex) {
-  var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
-  var toIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('to')));
+  var fromValue = this.getArrowFrom(arrow);
+  var toValue = this.getArrowTo(arrow);
+
+  var fromIndex = this.getIndexFromValue(fromValue);
+  var toIndex = this.getIndexFromValue(toValue);
 
   return Math.min(fromIndex, toIndex, stackIndex) === stackIndex;
 };
@@ -657,7 +658,8 @@ anychart.waterfallModule.ArrowsController.prototype.modifyArrowsFromToPoint = fu
   goog.array.sort(arrows, this.getArrowsSortFunction(xScaleIndex));
 
   goog.array.forEach(arrows, function(arrow, index) {
-    var fromIndex = this.getIndexFromValue(/** @type {string} */(arrow.getOption('from')));
+    var fromValue = this.getArrowFrom(arrow);
+    var fromIndex = this.getIndexFromValue(fromValue);
 
     var xValue = stackBounds.getLeft() + ((index + 1) * step);
     if (fromIndex === xScaleIndex) {
@@ -723,13 +725,11 @@ anychart.waterfallModule.ArrowsController.prototype.applyLabelsStyle = function(
     var flatSettings = arrow.label().flatten();
     var text = arrow.getText();
 
-    var from = arrow.getOption('from');
-    var to = arrow.getOption('to');
+    var fromValue = this.getArrowFrom(arrow);
+    var toValue = this.getArrowTo(arrow);
 
-    var xScale = this.chart_.xScale();
-
-    var fromStackIndex = xScale.getIndexByValue(from);
-    var toStackIndex = xScale.getIndexByValue(to);
+    var fromStackIndex = this.getIndexFromValue(fromValue);
+    var toStackIndex = this.getIndexFromValue(toValue);
 
     var formatProvider = this.chart_.getFormatProviderForArrow(toStackIndex, fromStackIndex);
     var textValue = arrow.label().getText(formatProvider);
